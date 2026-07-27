@@ -23,7 +23,10 @@
     },
     "web": {
       "bundler": "metro",
-      "output": "single"
+      "output": "static"
+    },
+    "experiments": {
+      "baseUrl": "/holy-bible-ai"
     },
     "plugins": ["expo-router", "expo-font"],
     "extra": {
