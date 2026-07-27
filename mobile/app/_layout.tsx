@@ -14,6 +14,7 @@ import { Cardo_400Regular, Cardo_700Bold } from '@expo-google-fonts/cardo';
 import { Cinzel_600SemiBold } from '@expo-google-fonts/cinzel';
 import { ThemeProvider } from '@/theme/ThemeContext';
 import { VersionProvider } from '@/state/VersionContext';
+import { SettingsProvider } from '@/state/SettingsContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -41,6 +42,7 @@ export default function RootLayout() {
         <title>Holy Bible · AI Assisted</title>
       </Head>
       <ThemeProvider>
+        <SettingsProvider>
         <VersionProvider>
           <StatusBar style="light" />
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0d1830' } }}>
@@ -49,6 +51,7 @@ export default function RootLayout() {
             <Stack.Screen name="give" options={{ presentation: 'card' }} />
           </Stack>
         </VersionProvider>
+        </SettingsProvider>
       </ThemeProvider>
     </SafeAreaProvider>
   );

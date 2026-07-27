@@ -19,14 +19,18 @@ Five tabs — **Home · Bible · Listen · Library · More** — in the Lumen de
 (Lumen · Vox · Sanctus · Aurora) that rotate daily.
 
 - **Home** — greeting, the liturgical day (season, colour, cycle, mysteries, coming feast), verse of the day
-- **Bible** — a reader with drop-caps and a three-tab book picker (OT grouped · NT · Deuterocanon)
+- **Bible** — a reader with drop-caps, a three-tab book picker (OT grouped · NT · Deuterocanon), and adjustable text size
 - **Listen** — read any passage aloud, then *Explain* it or *Ask* a question (Claude)
-- **Library** — featured works, collections, the starter shelf (readable content in Phase 2)
-- **More** — the hub: the guided **Rosary** and **Give** are live; For Catholics, Churches, Reminders, Mentorship preview Phase 2
+- **Library** — readable collections (**Book of the Saints · The Prophets · Artifacts & Documents**), the starter shelf, *Find free books*, and *Submit your book*
+- **More** — the hub, now fully alive (Phase 2):
+  - **Pray** — the complete guided **Rosary** (all five decades) and the **Divine Mercy Chaplet**, illuminated bead by bead
+  - **For Catholics** — The Day · Divine Mercy · Block Rosary · Legion of Mary · Our Lady · Canon Law
+  - **Community** — Churches (founding directory + listing form), prayer **Reminders**, **Mentorship** (the Life in the Spirit Seminar, with the AI guide)
+  - **Settings** — default version, Scripture text size, home theme, all remembered on the device
 
 ## Fully offline Scripture — six public-domain versions
 
-Bundled in `mobile/assets/bibles/` and switched in the version selector — **works with
+Bundled in `mobile/public/bibles/` and switched in the version selector — **works with
 no internet at all**:
 
 | Version | Notes |

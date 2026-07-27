@@ -7,8 +7,8 @@ import { Screen, Label } from '@/components/ui';
 /**
  * More — the hub for everything that does not belong on the home screen.
  * Per the blueprint, the Catholic devotions and Churches live in here,
- * never on Home. In Phase 1, Rosary and Give are live; the rest preview
- * what Phase 2 brings.
+ * never on Home. Phase 2: the devotions, community, and settings are live;
+ * only Pray with Friends waits for Phase 3.
  */
 export default function More() {
   const router = useRouter();
@@ -19,24 +19,25 @@ export default function More() {
 
         <Label style={styles.sectionLabel}>Pray</Label>
         <Item icon="flower-outline" title="The Rosary" sub="Guided, illuminated bead by bead" onPress={() => router.push('/rosary')} live />
+        <Item icon="water-outline" title="Divine Mercy Chaplet" sub="Guided, on ordinary rosary beads" onPress={() => router.push('/chaplet')} live />
         <Item icon="heart-outline" title="Support this app" sub="Keep the Word freely given" onPress={() => router.push('/give')} live />
 
         <Label style={styles.sectionLabel}>For Catholics</Label>
-        <Item icon="sunny-outline" title="The day" sub="Liturgy, Mass, the feast calendar" />
-        <Item icon="water-outline" title="Divine Mercy" sub="Chaplet, novena, the 3 o'clock hour" />
-        <Item icon="home-outline" title="Block Rosary" sub="The Nigerian evening apostolate" />
-        <Item icon="shield-outline" title="Legion of Mary" sub="Prayers and apostolate" />
-        <Item icon="rose-outline" title="Our Lady" sub="Devotions, the Litany, the Angelus" />
-        <Item icon="document-text-outline" title="Canon Law" sub="Readable in-app, with the Vatican text" />
+        <Item icon="sunny-outline" title="The day" sub="Season, colour, cycle, mysteries, the coming feast" onPress={() => router.push('/catholic-day')} live />
+        <Item icon="water-outline" title="Divine Mercy" sub="The chaplet, the novena, the 3 o'clock hour" onPress={() => router.push('/divine-mercy')} live />
+        <Item icon="home-outline" title="Block Rosary" sub="The neighbourhood evening apostolate" onPress={() => router.push('/block-rosary')} live />
+        <Item icon="shield-outline" title="Legion of Mary" sub="Mary's lay apostolic army" onPress={() => router.push('/legion')} live />
+        <Item icon="rose-outline" title="Our Lady" sub="The Angelus, the Memorare, the Magnificat" onPress={() => router.push('/our-lady')} live />
+        <Item icon="document-text-outline" title="Canon Law" sub="A readable guide, with the Vatican text" onPress={() => router.push('/canon-law')} live />
 
         <Label style={styles.sectionLabel}>Community</Label>
-        <Item icon="business-outline" title="Churches" sub="A verified directory worldwide" />
+        <Item icon="business-outline" title="Churches" sub="A verified directory worldwide" onPress={() => router.push('/churches')} live />
         <Item icon="call-outline" title="Pray with Friends" sub="In-app prayer calls (Phase 3)" />
-        <Item icon="notifications-outline" title="Reminders" sub="Prayer reminders that ring like a call" />
-        <Item icon="school-outline" title="Mentorship" sub="Life in the Spirit Seminar & more" />
+        <Item icon="notifications-outline" title="Reminders" sub="The hours of prayer, ringing daily" onPress={() => router.push('/reminders')} live />
+        <Item icon="school-outline" title="Mentorship" sub="The Life in the Spirit Seminar" onPress={() => router.push('/mentorship')} live />
 
         <Label style={styles.sectionLabel}>App</Label>
-        <Item icon="settings-outline" title="Settings" sub="Themes, text size, reminders, account" />
+        <Item icon="settings-outline" title="Settings" sub="Version, text size, themes, reminders" onPress={() => router.push('/settings')} live />
 
         <Text style={styles.footer}>
           “Put the Word freely in people's hands.” Free forever — never a paywall on Scripture.
@@ -64,7 +65,7 @@ function Item({ icon, title, sub, onPress, live }: { icon: any; title: string; s
       {live ? (
         <Ionicons name="chevron-forward" size={20} color={Lumen.colors.muted} />
       ) : (
-        <Text style={styles.coming}>Phase 2</Text>
+        <Text style={styles.coming}>Phase 3</Text>
       )}
     </Pressable>
   );

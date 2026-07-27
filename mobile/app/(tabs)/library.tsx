@@ -1,12 +1,13 @@
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Lumen } from '@/theme/lumen';
 import { Screen, Card, Label } from '@/components/ui';
+import { COLLECTIONS } from '@/data/library';
 
 /**
- * The Library — featured works, collections, and ways to grow the shelf.
- * Phase 1 previews the shape; the readable works, uploads, and the admin
- * review queue arrive in Phase 2 (they need cloud storage).
+ * The Library — readable collections, the starter shelf, and the ways
+ * the shelf grows. Collections are live; uploads await cloud storage.
  */
 
 const FEATURED = [
@@ -24,13 +25,8 @@ const STARTER_SHELF = [
   ['Story of a Soul', 'Thérèse of Lisieux'],
 ];
 
-const COLLECTIONS = [
-  { icon: 'people-outline', title: 'Book of the Saints', sub: 'Life · feast day · patronage · writings' },
-  { icon: 'megaphone-outline', title: 'Prophets', sub: 'The voices that pointed to Christ' },
-  { icon: 'ribbon-outline', title: 'Artifacts & Documents', sub: 'Relics, letters, and sources' },
-];
-
 export default function Library() {
+  const router = useRouter();
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -50,14 +46,16 @@ export default function Library() {
 
         <Label style={styles.sectionLabel}>Collections</Label>
         {COLLECTIONS.map((c) => (
-          <Card key={c.title} style={styles.row}>
-            <Ionicons name={c.icon as any} size={22} color={Lumen.colors.accent} />
-            <View style={{ flex: 1 }}>
-              <Text style={styles.rowTitle}>{c.title}</Text>
-              <Text style={styles.rowSub}>{c.sub}</Text>
-            </View>
-            <Text style={styles.coming}>Phase 2</Text>
-          </Card>
+          <Pressable key={c.id} onPress={() => router.push(`/collection/${c.id}` as any)}>
+            <Card style={styles.row}>
+              <Ionicons name={c.icon as any} size={22} color={Lumen.colors.accent} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowTitle}>{c.title}</Text>
+                <Text style={styles.rowSub}>{c.sub} · {c.entries.length} entries</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
+            </Card>
+          </Pressable>
         ))}
 
         <Label style={styles.sectionLabel}>Starter shelf</Label>
@@ -71,22 +69,26 @@ export default function Library() {
         </Card>
 
         <Label style={styles.sectionLabel}>Grow the library</Label>
-        <Card style={styles.row}>
-          <Ionicons name="search-outline" size={22} color={Lumen.colors.accent} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.rowTitle}>Find free books</Text>
-            <Text style={styles.rowSub}>CCEL · Gutenberg · Internet Archive · Wikisource</Text>
-          </View>
-          <Text style={styles.coming}>Phase 2</Text>
-        </Card>
-        <Card style={styles.row}>
-          <Ionicons name="cloud-upload-outline" size={22} color={Lumen.colors.accent} />
-          <View style={{ flex: 1 }}>
-            <Text style={styles.rowTitle}>Submit your book</Text>
-            <Text style={styles.rowSub}>Reviewed with its author before publishing</Text>
-          </View>
-          <Text style={styles.coming}>Phase 2</Text>
-        </Card>
+        <Pressable onPress={() => router.push('/free-books')}>
+          <Card style={styles.row}>
+            <Ionicons name="search-outline" size={22} color={Lumen.colors.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>Find free books</Text>
+              <Text style={styles.rowSub}>CCEL · Gutenberg · Internet Archive · Wikisource</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
+          </Card>
+        </Pressable>
+        <Pressable onPress={() => router.push('/submit-book')}>
+          <Card style={styles.row}>
+            <Ionicons name="cloud-upload-outline" size={22} color={Lumen.colors.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.rowTitle}>Submit your book</Text>
+              <Text style={styles.rowSub}>Reviewed with its author before publishing</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
+          </Card>
+        </Pressable>
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -105,7 +107,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 14, marginBottom: 10 },
   rowTitle: { fontFamily: Lumen.fonts.display, fontSize: 19, color: Lumen.colors.text },
   rowSub: { fontFamily: Lumen.fonts.body, fontSize: 12, color: Lumen.colors.muted, marginTop: 1 },
-  coming: { fontFamily: Lumen.fonts.label, fontSize: 10, letterSpacing: 1, color: Lumen.colors.accent, borderWidth: 1, borderColor: Lumen.colors.cardBorder, paddingHorizontal: 8, paddingVertical: 3, borderRadius: Lumen.radius.pill },
   shelfRow: { paddingVertical: 10 },
   shelfDivider: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' },
   shelfTitle: { fontFamily: Lumen.fonts.display, fontSize: 18, color: Lumen.colors.text },

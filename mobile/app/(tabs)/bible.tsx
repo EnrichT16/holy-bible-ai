@@ -11,11 +11,15 @@ import { BOOKS, OT_GROUPS, findBook } from '@/data/books';
 import { VERSIONS, DEUTERO_VERSION, DEUTERO_BOOKS, findVersion } from '@/data/versions';
 import { BIBLE_MANIFEST } from '@/data/bibles/manifest';
 import { useVersion } from '@/state/VersionContext';
+import { useSettings } from '@/state/SettingsContext';
 import { loadChapter, chapterCount, hasBook, ChapterResult } from '@/lib/bibleApi';
 
 export default function BibleReader() {
   const router = useRouter();
   const { versionId, version, setVersion } = useVersion();
+  const { textScale } = useSettings();
+  const verseSize = { fontSize: (Lumen.type.scripture + 3) * textScale, lineHeight: 34 * textScale };
+  const dropCapSize = { fontSize: 58 * textScale, lineHeight: 54 * textScale };
   const [book, setBook] = useState('John');
   const [chapter, setChapter] = useState(1);
   const [data, setData] = useState<ChapterResult | null>(null);
@@ -149,11 +153,11 @@ export default function BibleReader() {
                 <Text key={v.verse} onPress={() => setSelected(selected === v.verse ? null : v.verse)} style={hl ? styles.highlighted : undefined}>
                   {isFirst ? (
                     <Text>
-                      <Text style={styles.dropCap}><Text style={styles.dropCapNum}>{v.verse}</Text>{t.charAt(0)}</Text>
-                      <Text style={[styles.verseText, selected === v.verse && styles.verseSelected]}>{t.slice(1)}{'  '}</Text>
+                      <Text style={[styles.dropCap, dropCapSize]}><Text style={styles.dropCapNum}>{v.verse}</Text>{t.charAt(0)}</Text>
+                      <Text style={[styles.verseText, verseSize, selected === v.verse && styles.verseSelected]}>{t.slice(1)}{'  '}</Text>
                     </Text>
                   ) : (
-                    <Text style={[styles.verseText, selected === v.verse && styles.verseSelected]}>
+                    <Text style={[styles.verseText, verseSize, selected === v.verse && styles.verseSelected]}>
                       <Text style={styles.verseNum}>{v.verse} </Text>{v.text}{'  '}
                     </Text>
                   )}

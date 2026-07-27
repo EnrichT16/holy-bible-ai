@@ -29,7 +29,7 @@ export interface GuideContent {
   footnote?: string;
 }
 
-export function GuidePage({ content }: { content: GuideContent }) {
+export function GuidePage({ content, footer }: { content: GuideContent; footer?: React.ReactNode }) {
   const router = useRouter();
   const [speakingId, setSpeakingId] = useState<string | null>(null);
 
@@ -115,6 +115,7 @@ export function GuidePage({ content }: { content: GuideContent }) {
           </View>
         ))}
 
+        {footer}
         {content.footnote && <Text style={styles.footnote}>{content.footnote}</Text>}
         <View style={{ height: 60 }} />
       </ScrollView>

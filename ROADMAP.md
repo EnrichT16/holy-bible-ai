@@ -14,7 +14,7 @@ onboarding, reminders, and mentorship.
 
 ---
 
-## Phase 1 — Build the MVP  *(with Claude Code)*  ← **IN PROGRESS**
+## ✔ Phase 1 — Build the MVP  *(with Claude Code)*  (COMPLETE)
 Build a lean, real, shippable first version — see **BUILD-BRIEF.md**:
 1. App shell (5-tab navigation) + Lumen theme
 2. Bible reader (KJV to start) + book picker
@@ -26,14 +26,19 @@ Build a lean, real, shippable first version — see **BUILD-BRIEF.md**:
 
 ---
 
-## Phase 2 — The devotion & community features
-- The **full For Catholics** section — Divine Mercy, Block Rosary, Legion of Mary,
-  Our Lady, Canon Law (mostly content + guided flows)
-- The **Library** — Saints, Prophets, Artifacts, *Find free books*, and *Submit your
-  book* with the admin review queue (needs cloud storage)
-- **Churches** directory — verified listings + *List your church* with back-end vetting
-- **Reminders** — incoming-call-style prayer reminders, **Settings**, **onboarding** polish
-- **Mentorship** — Life in the Spirit Seminar + other tracks, with the AI guide
+## Phase 2 — The devotion & community features  ← **IN PROGRESS**
+- [x] The **full For Catholics** section — The Day, Divine Mercy (+ guided Chaplet),
+  Block Rosary, Legion of Mary, Our Lady, Canon Law
+- [x] The **complete guided Rosary** — all five decades + closing prayers
+- [x] The **Library collections** — Book of the Saints, The Prophets, Artifacts &
+  Documents, *Find free books*; *Submit your book* prepared (uploads await cloud storage)
+- [x] **Churches** — founding directory shell + *List your church* form (vetting
+  backend still to come)
+- [x] **Reminders** — daily prayer notifications on the phone (the incoming-call ring
+  arrives in Phase 3) · **Settings** — version, text size, theme, persisted
+- [x] **Mentorship** — the Life in the Spirit Seminar (7 sessions) with the AI guide
+- [ ] **Backend-dependent remainder:** accounts + cloud storage (book uploads, church
+  vetting queue) — recommend Supabase or Firebase, a founder decision
 
 **Milestone:** the full spiritual app, minus live calling.
 
