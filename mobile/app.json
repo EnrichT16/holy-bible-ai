@@ -32,7 +32,9 @@
     "extra": {
       "backendUrl": "http://localhost:8000",
       "donationUrl": "https://example.org/give",
-      "giftAidUrl": ""
+      "giftAidUrl": "",
+      "supabaseUrl": "https://wrhwaghauinxtytyyrgm.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndyaHdhZ2hhdWlueHR5dHl5cmdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNjU4NzUsImV4cCI6MjEwMDc0MTg3NX0.gqj36CZkpORrcGnQjlYP3mkN2uZaeUz0eSRAonWXBbY"
     }
   }
 }
