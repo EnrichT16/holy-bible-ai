@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,7 @@ import { Lumen } from '@/theme/lumen';
 import { useTheme } from '@/theme/ThemeContext';
 import { Screen, Card, Label } from '@/components/ui';
 import { getLiturgicalDay } from '@/lib/liturgical';
+import { getPref } from '@/lib/storage';
 
 const VERSES = [
   { ref: 'Job 22:28', text: 'Thou shalt also decree a thing, and it shall be established unto thee: and the light shall shine upon thy ways.' },
@@ -36,6 +37,13 @@ export default function Home() {
   const router = useRouter();
   const { theme } = useTheme();
   const now = useMemo(() => new Date(), []);
+
+  // First open: walk the welcome once, then never again.
+  useEffect(() => {
+    getPref('onboarded').then((v) => {
+      if (!v) router.replace('/onboarding');
+    });
+  }, [router]);
   const lit = useMemo(() => getLiturgicalDay(now), [now]);
   const verse = VERSES[Math.floor(now.getTime() / 86400000) % VERSES.length];
 

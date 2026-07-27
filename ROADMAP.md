@@ -35,7 +35,7 @@ Build a lean, real, shippable first version — see **BUILD-BRIEF.md**:
 - [x] **Churches** — founding directory shell + *List your church* form (vetting
   backend still to come)
 - [x] **Reminders** — daily prayer notifications on the phone (the incoming-call ring
-  arrives in Phase 3) · **Settings** — version, text size, theme, persisted
+  arrives in Phase 3) · **Settings** — version, text size, theme, persisted · first-open **onboarding**
 - [x] **Mentorship** — the Life in the Spirit Seminar (7 sessions) with the AI guide
 - [ ] **Backend-dependent remainder:** accounts + cloud storage (book uploads, church
   vetting queue) — recommend Supabase or Firebase, a founder decision
