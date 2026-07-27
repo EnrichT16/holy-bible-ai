@@ -5,7 +5,7 @@ import re, os, json, html, sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SRC = os.path.join(os.path.dirname(os.path.abspath(__file__)), "bible-src")
-OUT = os.path.join(ROOT, "mobile", "assets", "bibles")
+OUT = os.path.join(ROOT, "mobile", "public", "bibles")
 MANIFEST = os.path.join(ROOT, "mobile", "src", "data", "bibles", "manifest.ts")
 os.makedirs(OUT, exist_ok=True)
 os.makedirs(os.path.dirname(MANIFEST), exist_ok=True)

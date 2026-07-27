@@ -1,9 +1,10 @@
 /**
- * Offline chapter loading. All Scripture is bundled with the app, so this
- * never touches the network — it reads from the requested version's JSON.
+ * Chapter loading. On iOS/Android all Scripture is bundled with the app, so
+ * this never touches the network. On web the version's JSON is fetched as a
+ * static asset the first time it is opened (see registry.web.ts).
  *
- * The require of a version's data (~4–5 MB) happens once, lazily, the first
- * time that version is opened; results are cached for the session.
+ * Loading a version's data (~4–5 MB) happens once, lazily, the first time
+ * that version is opened; results are cached for the session.
  */
 import { BIBLE_FILES, BibleData } from '@/data/bibles/registry';
 import { BIBLE_MANIFEST } from '@/data/bibles/manifest';
@@ -20,12 +21,15 @@ export interface ChapterResult {
   version: string;
 }
 
-const cache: Record<string, BibleData> = {};
+const cache: Record<string, Promise<BibleData>> = {};
 
-function getVersionData(version: string): BibleData {
+function getVersionData(version: string): Promise<BibleData> {
   if (!cache[version]) {
     const loader = BIBLE_FILES[version] ?? BIBLE_FILES.kjv;
-    cache[version] = loader();
+    cache[version] = loader().catch((err) => {
+      delete cache[version]; // don't cache a failed load — allow retry
+      throw err;
+    });
   }
   return cache[version];
 }
@@ -41,11 +45,11 @@ export function hasBook(version: string, book: string): boolean {
 }
 
 /**
- * Load a chapter. Async by signature (screens await it) but resolves from the
- * bundled data — no network. Rejects only if the book/chapter isn't present.
+ * Load a chapter. Resolves from bundled data on native, from a fetched static
+ * asset on web. Rejects if the book/chapter isn't present or the fetch fails.
  */
 export async function loadChapter(version: string, book: string, chapter: number): Promise<ChapterResult> {
-  const data = getVersionData(version);
+  const data = await getVersionData(version);
   const ch = data[book]?.[String(chapter)];
   if (!ch) {
     throw new Error(`${book} ${chapter} isn't in this version.`);

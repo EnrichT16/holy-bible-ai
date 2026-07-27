@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
+import Head from 'expo-router/head';
 import { StatusBar } from 'expo-status-bar';
 import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -36,6 +37,9 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <Head>
+        <title>Holy Bible · AI Assisted</title>
+      </Head>
       <ThemeProvider>
         <VersionProvider>
           <StatusBar style="light" />
