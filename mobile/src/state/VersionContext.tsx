@@ -1,5 +1,6 @@
-import { createContext, useContext, useState, useMemo, ReactNode } from 'react';
-import { DEFAULT_VERSION, findVersion, Version } from '@/data/versions';
+import { createContext, useContext, useEffect, useState, useMemo, ReactNode } from 'react';
+import { DEFAULT_VERSION, findVersion, VERSIONS, Version } from '@/data/versions';
+import { getPref, setPref } from '@/lib/storage';
 
 interface VersionState {
   versionId: string;
@@ -11,8 +12,23 @@ const Ctx = createContext<VersionState | null>(null);
 
 export function VersionProvider({ children }: { children: ReactNode }) {
   const [versionId, setVersionId] = useState(DEFAULT_VERSION);
+
+  // Remember the reader's chosen version between sessions.
+  useEffect(() => {
+    getPref('version').then((v) => {
+      if (v && VERSIONS.some((ver) => ver.id === v)) setVersionId(v);
+    });
+  }, []);
+
   const value = useMemo<VersionState>(
-    () => ({ versionId, version: findVersion(versionId), setVersion: setVersionId }),
+    () => ({
+      versionId,
+      version: findVersion(versionId),
+      setVersion: (id: string) => {
+        setVersionId(id);
+        setPref('version', id);
+      },
+    }),
     [versionId]
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
