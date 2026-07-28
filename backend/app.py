@@ -10,20 +10,32 @@ Run locally:
     export ANTHROPIC_API_KEY=sk-ant-...
     uvicorn app:app --reload --port 8000
 """
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Literal, Optional
+from collections import deque
+from time import time
 import os
 import httpx
 
-app = FastAPI(title="Holy Bible · AI Assisted — Backend", version="0.1.0")
+app = FastAPI(title="Holy Bible · AI Assisted — Backend", version="0.2.0")
+
+# Origins allowed to call this API: the public web preview and local dev.
+# Native apps send no Origin header, so they are unaffected by CORS.
+ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.environ.get(
+        "HOLYBIBLE_ALLOWED_ORIGINS",
+        "https://enricht16.github.io,http://localhost:8081,http://localhost:19006",
+    ).split(",")
+    if o.strip()
+]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten to your app's origin before launch
-    allow_credentials=True,
-    allow_methods=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
 
@@ -43,6 +55,34 @@ SYSTEM_PROMPT = (
     "citations. You are an aid to study and prayer, not a replacement for Scripture, "
     "the Church, or a person's pastor."
 )
+
+
+# ── Gentle abuse guard ────────────────────────────────────────────────
+# The endpoint spends real Anthropic credit, so each IP gets a fixed
+# number of reflections per hour. In-memory is fine for one instance.
+RATE_LIMIT_PER_HOUR = int(os.environ.get("HOLYBIBLE_RATE_LIMIT", "20"))
+_hits: dict[str, deque] = {}
+
+
+def _client_ip(request: Request) -> str:
+    fwd = request.headers.get("x-forwarded-for", "")
+    if fwd:
+        return fwd.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def _within_rate_limit(ip: str) -> bool:
+    now = time()
+    if len(_hits) > 10000:  # shed empty buckets under unusual load
+        for k in [k for k, v in _hits.items() if not v]:
+            _hits.pop(k, None)
+    dq = _hits.setdefault(ip, deque())
+    while dq and now - dq[0] > 3600:
+        dq.popleft()
+    if len(dq) >= RATE_LIMIT_PER_HOUR:
+        return False
+    dq.append(now)
+    return True
 
 
 class ExplainRequest(BaseModel):
@@ -69,9 +109,14 @@ def health():
 
 
 @app.post("/api/explain", response_model=ExplainResponse)
-async def explain(req: ExplainRequest):
+async def explain(req: ExplainRequest, request: Request):
     if not ANTHROPIC_API_KEY:
         raise HTTPException(status_code=503, detail="AI guide not configured on the server.")
+    if not _within_rate_limit(_client_ip(request)):
+        raise HTTPException(
+            status_code=429,
+            detail="The guide needs a moment of rest — please try again in a little while.",
+        )
 
     passage = req.passage.strip()[:6000]
     if req.mode == "ask":

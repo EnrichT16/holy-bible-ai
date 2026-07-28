@@ -1,0 +1,33 @@
+# DigitalOcean App Platform spec — the Holy Bible AI guide backend.
+# Use: App Platform → Create App → import this spec, or let the wizard
+# detect backend/ as a Python service and mirror these settings.
+name: holy-bible-backend
+region: lon
+services:
+  - name: api
+    github:
+      repo: EnrichT16/holy-bible-ai
+      branch: main
+      deploy_on_push: true
+    source_dir: backend
+    environment_slug: python
+    run_command: uvicorn app:app --host 0.0.0.0 --port $PORT
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 8080
+    health_check:
+      http_path: /api/health
+    envs:
+      - key: ANTHROPIC_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+        value: ""
+      - key: HOLYBIBLE_MODEL
+        scope: RUN_TIME
+        value: claude-sonnet-5
+      - key: HOLYBIBLE_MAX_TOKENS
+        scope: RUN_TIME
+        value: "600"
+      - key: HOLYBIBLE_RATE_LIMIT
+        scope: RUN_TIME
+        value: "20"
