@@ -30,7 +30,7 @@
     },
     "plugins": ["expo-router", "expo-font"],
     "extra": {
-      "backendUrl": "http://localhost:8000",
+      "backendUrl":"backendUrl": "https://lionfish-app-rjo2f.ondigitalocean.app",
       "donationUrl": "https://example.org/give",
       "giftAidUrl": "",
       "supabaseUrl": "https://wrhwaghauinxtytyyrgm.supabase.co",
