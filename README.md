@@ -95,6 +95,20 @@ Run `supabase/schema.sql` once in the Supabase dashboard (SQL Editor → New que
 → Run). It is idempotent, so re-running it after an update is safe. Point the app at the
 project with `extra.supabaseUrl` and `extra.supabaseAnonKey` in `mobile/app.json`.
 
+The Prayer Circle's privacy lives in these policies rather than in the app, so it is
+checked where it lives. Against any plain Postgres — CI does exactly this on every pull
+request:
+
+```bash
+psql -v ON_ERROR_STOP=1 -f supabase/test/harness.sql   # stand in for Supabase
+psql -v ON_ERROR_STOP=1 -f supabase/schema.sql
+psql -v ON_ERROR_STOP=1 -f supabase/test/rls_test.sql  # three signed-in people
+```
+
+`harness.sql` supplies only what Supabase already provides — the `auth` schema,
+`auth.uid()`, and the `anon` / `authenticated` roles — and is never run against the real
+project.
+
 ## Run it locally
 
 ```bash
