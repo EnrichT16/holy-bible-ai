@@ -26,7 +26,7 @@ Build a lean, real, shippable first version — see **BUILD-BRIEF.md**:
 
 ---
 
-## Phase 2 — The devotion & community features  ← **IN PROGRESS**
+## ✔ Phase 2 — The devotion & community features  (COMPLETE)
 - [x] The **full For Catholics** section — The Day, Divine Mercy (+ guided Chaplet),
   Block Rosary, Legion of Mary, Our Lady, Canon Law
 - [x] The **complete guided Rosary** — all five decades + closing prayers
@@ -37,20 +37,41 @@ Build a lean, real, shippable first version — see **BUILD-BRIEF.md**:
 - [x] **Reminders** — daily prayer notifications on the phone (the incoming-call ring
   arrives in Phase 3) · **Settings** — version, text size, theme, persisted · first-open **onboarding**
 - [x] **Mentorship** — the Life in the Spirit Seminar (7 sessions) with the AI guide
-- [ ] **Backend-dependent remainder:** accounts + cloud storage (book uploads, church
-  vetting queue) — recommend Supabase or Firebase, a founder decision
+- [x] **Backend:** Supabase wired — church listing submissions, the live verified
+  directory, the book review queue. *Accounts arrived with Phase 3 Slice 1; book file
+  uploads still await cloud storage*
 
 **Milestone:** the full spiritual app, minus live calling.
 
 ---
 
-## Phase 3 — Pray with Friends (calling) + the subscription
-- In-app voice calls (WebRTC), unique IDs / QR invites, one-to-one and groups of four,
+## Phase 3 — Pray with Friends (calling) + the subscription  ← **IN PROGRESS**
+
+Built in slices, because calling needs someone to call before it needs a microphone.
+
+### ✔ Slice 1 — accounts and the Prayer Circle  (COMPLETE)
+- [x] **Accounts** — email and password through Supabase Auth, remembered on the device
+  and quietly renewed. Never required to read Scripture or to pray; it is only the door
+  to the circle
+- [x] **The prayer ID** — every account carries a shareable handle (`HB-4KQ7-9TXM`),
+  minted on sign-up, with the ambiguous letters left out so it survives being read aloud
+- [x] **The Prayer Circle** — invite by prayer ID, accept or decline, leave; two people
+  who invite each other simply join
+- [x] **Shared intentions** — name what you would have your circle pray for, and mark
+  the quiet *I prayed for this*; the author may mark one answered
+- [x] **The privacy that has to hold** — Row Level Security throughout: nobody can browse
+  the membership of the app, a stranger is reachable only by the exact prayer ID they gave
+  you, and intentions never leave the circle
+
+### Slice 2 — the calls  ← **NEXT**
+- In-app voice calls (WebRTC), QR invites, one-to-one and groups of four,
   *read the Word together*, real ringing + missed calls
 - Free tier on self-hosted open-source calling (LiveKit / Jitsi); paid **unlimited**
   tier via a provider (Twilio / Agora), funded by the subscription
-- The **subscription** (15 minutes free → unlimited) through Apple / Google in-app
-  purchase, priced cost-plus with the store's cut folded in
+
+### Slice 3 — the subscription
+- 15 minutes free → unlimited, through Apple / Google in-app purchase, priced cost-plus
+  with the store's cut folded in
 
 **Milestone:** believers calling each other to pray, inside your app.
 
