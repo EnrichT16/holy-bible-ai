@@ -1,0 +1,88 @@
+name: CI
+
+# Checks every pull request before it reaches main. The deploy workflow
+# only runs after a merge, so without this nothing would look at a branch
+# until its changes were already live on the public preview.
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: Typecheck and build the app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Install dependencies
+        working-directory: mobile
+        run: npm ci
+
+      - name: Typecheck
+        working-directory: mobile
+        run: npx tsc --noEmit
+
+      # The same command the deploy workflow runs, so a branch that builds
+      # here is a branch that will deploy.
+      - name: Build the web app
+        working-directory: mobile
+        run: npx expo export --platform web --output-dir dist
+
+  schema:
+    name: Schema and privacy policies
+    runs-on: ubuntu-latest
+
+    # The privacy of the Prayer Circle lives in Row Level Security, not in
+    # the app, so it is checked where it lives: the real schema.sql applied
+    # to a real Postgres, then exercised as three separate signed-in people.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: postgres
+      PGPASSWORD: postgres
+      PGDATABASE: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure psql is available
+        run: psql --version || (sudo apt-get update && sudo apt-get install -y postgresql-client)
+
+      # Supabase provides the auth schema, auth.uid() and the anon /
+      # authenticated roles; this stands in for them and nothing more.
+      - name: Stand in for Supabase
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/test/harness.sql
+
+      - name: Apply the schema
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+
+      # The founder is told the file is safe to re-run after an update.
+      - name: Apply it a second time — it must be re-runnable
+        run: psql -v ON_ERROR_STOP=1 -q -f supabase/schema.sql
+
+      - name: Check the promises hold
+        run: psql -v ON_ERROR_STOP=1 -f supabase/test/rls_test.sql

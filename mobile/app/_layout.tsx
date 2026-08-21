@@ -15,6 +15,7 @@ import { Cinzel_600SemiBold } from '@expo-google-fonts/cinzel';
 import { ThemeProvider } from '@/theme/ThemeContext';
 import { VersionProvider } from '@/state/VersionContext';
 import { SettingsProvider } from '@/state/SettingsContext';
+import { AccountProvider } from '@/state/AccountContext';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
@@ -43,6 +44,7 @@ export default function RootLayout() {
       </Head>
       <ThemeProvider>
         <SettingsProvider>
+        <AccountProvider>
         <VersionProvider>
           <StatusBar style="light" />
           <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0d1830' } }}>
@@ -51,6 +53,7 @@ export default function RootLayout() {
             <Stack.Screen name="give" options={{ presentation: 'card' }} />
           </Stack>
         </VersionProvider>
+        </AccountProvider>
         </SettingsProvider>
       </ThemeProvider>
     </SafeAreaProvider>

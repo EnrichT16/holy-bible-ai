@@ -7,8 +7,8 @@ import { Screen, Label } from '@/components/ui';
 /**
  * More — the hub for everything that does not belong on the home screen.
  * Per the blueprint, the Catholic devotions and Churches live in here,
- * never on Home. Phase 2: the devotions, community, and settings are live;
- * only Pray with Friends waits for Phase 3.
+ * never on Home. Phase 3 opens the community half: accounts and the
+ * Prayer Circle are live, and the prayer calls themselves come next.
  */
 export default function More() {
   const router = useRouter();
@@ -32,11 +32,13 @@ export default function More() {
 
         <Label style={styles.sectionLabel}>Community</Label>
         <Item icon="business-outline" title="Churches" sub="A verified directory worldwide" onPress={() => router.push('/churches')} live />
-        <Item icon="call-outline" title="Pray with Friends" sub="In-app prayer calls (Phase 3)" />
+        <Item icon="people-outline" title="Prayer Circle" sub="The friends you pray with, and their intentions" onPress={() => router.push('/circle')} live />
+        <Item icon="call-outline" title="Pray with Friends" sub="Praying aloud together — calls arrive next" />
         <Item icon="notifications-outline" title="Reminders" sub="The hours of prayer, ringing daily" onPress={() => router.push('/reminders')} live />
         <Item icon="school-outline" title="Mentorship" sub="The Life in the Spirit Seminar" onPress={() => router.push('/mentorship')} live />
 
         <Label style={styles.sectionLabel}>App</Label>
+        <Item icon="person-circle-outline" title="Your account" sub="Your prayer ID — how friends find you" onPress={() => router.push('/account')} live />
         <Item icon="settings-outline" title="Settings" sub="Version, text size, themes, reminders" onPress={() => router.push('/settings')} live />
 
         <Text style={styles.footer}>
@@ -65,7 +67,7 @@ function Item({ icon, title, sub, onPress, live }: { icon: any; title: string; s
       {live ? (
         <Ionicons name="chevron-forward" size={20} color={Lumen.colors.muted} />
       ) : (
-        <Text style={styles.coming}>Phase 3</Text>
+        <Text style={styles.coming}>Next</Text>
       )}
     </Pressable>
   );

@@ -6,6 +6,7 @@ import { useTheme } from '@/theme/ThemeContext';
 import { Screen, Card, Label } from '@/components/ui';
 import { useVersion } from '@/state/VersionContext';
 import { useSettings, TEXT_SIZES } from '@/state/SettingsContext';
+import { useAccount } from '@/state/AccountContext';
 import { VERSIONS } from '@/data/versions';
 
 /**
@@ -17,6 +18,7 @@ export default function Settings() {
   const { versionId, setVersion } = useVersion();
   const { textSize, textScale, setTextSize } = useSettings();
   const { isPinned, pinnedName, setTheme, clearPin } = useTheme();
+  const { status, profile, available } = useAccount();
 
   return (
     <Screen edges={['top', 'bottom']}>
@@ -30,6 +32,30 @@ export default function Settings() {
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>Settings</Text>
+
+        {available && (
+          <>
+            <Label style={styles.sectionLabel}>Account</Label>
+            <Pressable onPress={() => router.push('/account')}>
+              <Card style={styles.linkRow}>
+                <Ionicons name="person-circle-outline" size={22} color={Lumen.colors.accent} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.linkTitle}>
+                    {status === 'signed-in' ? profile?.display_name || 'Your account' : 'Sign in'}
+                  </Text>
+                  <Text style={styles.linkSub}>
+                    {status === 'signed-in'
+                      ? profile?.prayer_id
+                        ? `Prayer ID ${profile.prayer_id}`
+                        : 'Your prayer ID and your circle'
+                      : 'Only needed for the Prayer Circle'}
+                  </Text>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
+              </Card>
+            </Pressable>
+          </>
+        )}
 
         <Label style={styles.sectionLabel}>Bible version</Label>
         <Card>
@@ -103,10 +129,21 @@ export default function Settings() {
           </Card>
         </Pressable>
 
+        <Pressable onPress={() => router.push('/circle')}>
+          <Card style={[styles.linkRow, { marginTop: 10 }]}>
+            <Ionicons name="people-outline" size={22} color={Lumen.colors.accent} />
+            <View style={{ flex: 1 }}>
+              <Text style={styles.linkTitle}>Prayer Circle</Text>
+              <Text style={styles.linkSub}>The friends you pray with, and their intentions</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
+          </Card>
+        </Pressable>
+
         <Label style={styles.sectionLabel}>About</Label>
         <Card>
           <Text style={styles.aboutName}>Holy Bible · AI Assisted</Text>
-          <Text style={styles.aboutLine}>Version 0.2.0 — the Phase 2 devotion build</Text>
+          <Text style={styles.aboutLine}>Version 0.3.0 — accounts and the Prayer Circle</Text>
           <Text style={styles.aboutLine}>Publisher: [Organisation TBC]</Text>
           <Text style={styles.aboutCreed}>
             Free forever — never a paywall on Scripture. Sustained by donations.
