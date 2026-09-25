@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Lumen } from '@/theme/lumen';
 import { Screen, Card, Label } from '@/components/ui';
 import { insertRow, selectRows, SUPABASE_ENABLED } from '@/lib/supabase';
+import { announce } from '@/lib/a11y';
 
 /**
  * Churches — the worldwide verified directory. Listings are requested
@@ -36,6 +37,10 @@ export default function Churches() {
       .then(setChurches)
       .catch(() => setChurches([]));
   }, []);
+
+  useEffect(() => {
+    if (sent) announce(sent);
+  }, [sent]);
 
   const canSubmit = !busy && name.trim() && city.trim() && country.trim() && contact.trim();
 
@@ -75,15 +80,15 @@ export default function Churches() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} />
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>Community</Text>
+        <Text style={styles.headerTitle} aria-hidden>Community</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Churches</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={1}>Churches</Text>
         <Text style={styles.subtitle}>
           A worldwide directory of verified churches — every listing checked by a person
           before it appears, so what you find is real.
@@ -106,15 +111,20 @@ export default function Churches() {
         ) : (
           <Card>
             {churches.map((c, i) => (
-              <View key={`${c.name}-${i}`} style={[styles.churchRow, i > 0 && styles.churchDivider]}>
-                <Ionicons name="business-outline" size={18} color={Lumen.colors.accent} />
+              <View
+                key={`${c.name}-${i}`}
+                style={[styles.churchRow, i > 0 && styles.churchDivider]}
+                accessible
+                accessibilityLabel={`${c.name}, ${c.city}, ${c.country}${c.mass_times ? `. Mass times: ${c.mass_times}` : ''}. Verified`}
+              >
+                <Ionicons name="business-outline" size={18} color={Lumen.colors.accent} aria-hidden />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.churchName}>{c.name}</Text>
                   <Text style={styles.churchMeta}>
                     {c.city}, {c.country}{c.mass_times ? ` · ${c.mass_times}` : ''}
                   </Text>
                 </View>
-                <Ionicons name="checkmark-circle" size={16} color={Lumen.colors.accent2} />
+                <Ionicons name="checkmark-circle" size={16} color={Lumen.colors.accent2} aria-hidden />
               </View>
             ))}
           </Card>
@@ -132,12 +142,15 @@ export default function Churches() {
             style={[styles.submit, !canSubmit && { opacity: 0.45 }]}
             disabled={!canSubmit}
             onPress={submit}
+            accessibilityRole="button"
+            accessibilityLabel="Submit your church for review"
+            accessibilityState={{ disabled: !canSubmit }}
           >
             {busy ? (
               <ActivityIndicator color="#0d1830" />
             ) : (
               <>
-                <Ionicons name="paper-plane-outline" size={17} color="#0d1830" />
+                <Ionicons name="paper-plane-outline" size={17} color="#0d1830" aria-hidden />
                 <Text style={styles.submitText}>Submit for review</Text>
               </>
             )}
@@ -166,8 +179,9 @@ function Field({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor={'rgba(155,176,208,0.5)'}
+        placeholderTextColor={'rgba(155,176,208,0.8)'}
         multiline={multiline}
+        accessibilityLabel={label}
       />
     </View>
   );
@@ -188,7 +202,7 @@ const styles = StyleSheet.create({
   churchMeta: { fontFamily: Lumen.fonts.body, fontSize: 12, color: Lumen.colors.muted, marginTop: 1 },
   fieldLabel: { fontFamily: Lumen.fonts.label, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: Lumen.colors.accent, marginBottom: 6 },
   input: { fontFamily: Lumen.fonts.body, fontSize: 15, color: Lumen.colors.text, borderWidth: 1, borderColor: Lumen.colors.cardBorder, borderRadius: Lumen.radius.md, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.03)' },
-  submit: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent, marginTop: 4 },
+  submit: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent, marginTop: 4 },
   submitText: { fontFamily: Lumen.fonts.bodyBold, color: '#0d1830', fontSize: 15 },
   sent: { fontFamily: Lumen.fonts.body, fontSize: 13, lineHeight: 19, color: Lumen.colors.accent2, marginTop: 12 },
   vetting: { fontFamily: Lumen.fonts.body, fontSize: 12, lineHeight: 18, color: Lumen.colors.muted, fontStyle: 'italic', marginTop: 12 },

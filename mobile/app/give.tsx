@@ -34,10 +34,10 @@ export default function Give() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-down" size={26} color={Lumen.colors.text} />
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Close Give">
+          <Ionicons name="chevron-down" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>Give</Text>
+        <Text style={styles.headerTitle} accessibilityRole="header" aria-level={1}>Give</Text>
         <View style={{ width: 26 }} />
       </View>
 
@@ -56,7 +56,14 @@ export default function Give() {
           {[['once', 'One-time'], ['monthly', 'Monthly']].map(([k, lbl]) => {
             const active = (k === 'monthly') === monthly;
             return (
-              <Pressable key={k} style={[styles.freqChip, active && styles.freqActive]} onPress={() => setMonthly(k === 'monthly')}>
+              <Pressable
+                key={k}
+                style={[styles.freqChip, active && styles.freqActive]}
+                onPress={() => setMonthly(k === 'monthly')}
+                accessibilityRole="button"
+                accessibilityLabel={`${lbl} gift`}
+                accessibilityState={{ selected: active }}
+              >
                 <Text style={[styles.freqText, active && styles.freqTextActive]}>{lbl}</Text>
               </Pressable>
             );
@@ -67,25 +74,50 @@ export default function Give() {
         <Label style={{ marginTop: 20, marginBottom: 10 }}>Choose an amount</Label>
         <View style={styles.amountGrid}>
           {AMOUNTS.map((a) => (
-            <Pressable key={a} style={[styles.amountChip, amount === a && styles.amountActive]} onPress={() => setAmount(a)}>
+            <Pressable
+              key={a}
+              style={[styles.amountChip, amount === a && styles.amountActive]}
+              onPress={() => setAmount(a)}
+              accessibilityRole="button"
+              accessibilityLabel={`${a} pounds`}
+              accessibilityState={{ selected: amount === a }}
+            >
               <Text style={[styles.amountText, amount === a && styles.amountTextActive]}>£{a}</Text>
             </Pressable>
           ))}
-          <Pressable style={[styles.amountChip, amount === null && styles.amountActive]} onPress={() => setAmount(null)}>
+          <Pressable
+            style={[styles.amountChip, amount === null && styles.amountActive]}
+            onPress={() => setAmount(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Another amount, chosen on the donation page"
+            accessibilityState={{ selected: amount === null }}
+          >
             <Text style={[styles.amountText, amount === null && styles.amountTextActive]}>Other</Text>
           </Pressable>
         </View>
 
         {/* Gift Aid */}
-        <Pressable style={styles.giftAid} onPress={() => setGiftAid((g) => !g)}>
-          <Ionicons name={giftAid ? 'checkbox' : 'square-outline'} size={22} color={Lumen.colors.accent} />
+        <Pressable
+          style={styles.giftAid}
+          onPress={() => setGiftAid((g) => !g)}
+          accessibilityRole="checkbox"
+          accessibilityLabel="Add Gift Aid. UK taxpayers can boost their gift by 25 percent at no extra cost"
+          accessibilityState={{ checked: giftAid }}
+        >
+          <Ionicons name={giftAid ? 'checkbox' : 'square-outline'} size={22} color={Lumen.colors.accent} aria-hidden />
           <Text style={styles.giftAidText}>
             Add Gift Aid — UK taxpayers can boost their gift by 25% at no extra cost.
           </Text>
         </Pressable>
 
-        <Pressable style={styles.giveBtn} onPress={openGiving}>
-          <Ionicons name="gift-outline" size={22} color="#0d1830" />
+        <Pressable
+          style={styles.giveBtn}
+          onPress={openGiving}
+          accessibilityRole="button"
+          accessibilityLabel={`Give${amount ? ` ${amount} pounds` : ''}${monthly ? ' each month' : ''}`}
+          accessibilityHint="Opens the secure donation page in your browser"
+        >
+          <Ionicons name="gift-outline" size={22} color="#0d1830" aria-hidden />
           <Text style={styles.giveBtnText}>
             Give {amount ? `£${amount}` : ''}{monthly ? ' / month' : ''}
           </Text>

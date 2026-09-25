@@ -16,10 +16,12 @@ import { ThemeProvider } from '@/theme/ThemeContext';
 import { VersionProvider } from '@/state/VersionContext';
 import { SettingsProvider } from '@/state/SettingsContext';
 import { AccountProvider } from '@/state/AccountContext';
+import { useReducedMotion } from '@/lib/a11y';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
+  const reducedMotion = useReducedMotion();
   const [loaded] = useFonts({
     // Aliases match Lumen.fonts.* in the theme.
     CormorantGaramond: CormorantGaramond_500Medium,
@@ -47,7 +49,14 @@ export default function RootLayout() {
         <AccountProvider>
         <VersionProvider>
           <StatusBar style="light" />
-          <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#0d1830' } }}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: '#0d1830' },
+              // The phone asked for stillness: honour it everywhere.
+              ...(reducedMotion ? { animation: 'none' as const } : {}),
+            }}
+          >
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="rosary" options={{ presentation: 'card' }} />
             <Stack.Screen name="give" options={{ presentation: 'card' }} />

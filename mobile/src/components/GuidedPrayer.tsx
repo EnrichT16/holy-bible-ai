@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
 import { Lumen } from '@/theme/lumen';
 import { Screen, Card, Label } from '@/components/ui';
+import { announce } from '@/lib/a11y';
 
 /**
  * The guided prayer player — the illuminated-bead experience shared by the
@@ -44,6 +45,12 @@ export function GuidedPrayer({
   const step = steps[index];
   const totalBeads = step.beads ?? 1;
   const isLast = index === steps.length - 1;
+
+  // Tell screen-reader users where they are each time the prayer moves on.
+  useEffect(() => {
+    const where = `Step ${index + 1} of ${steps.length}. ${step.title}.`;
+    announce(totalBeads > 1 ? `${where} Bead ${bead} of ${totalBeads}.` : where);
+  }, [index, bead, step.title, steps.length, totalBeads]);
 
   const words = useMemo(() => {
     const out: { text: string; start: number; end: number }[] = [];
@@ -107,24 +114,34 @@ export function GuidedPrayer({
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => { stopSpeech(); router.back(); }} hitSlop={12}>
-          <Ionicons name="chevron-down" size={26} color={Lumen.colors.text} />
+        <Pressable
+          onPress={() => { stopSpeech(); router.back(); }}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel={`Close ${title}`}
+        >
+          <Ionicons name="chevron-down" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>{title}</Text>
-        <Pressable onPress={restart} hitSlop={12}>
-          <Ionicons name="refresh-outline" size={22} color={Lumen.colors.muted} />
+        <Text style={styles.headerTitle} accessibilityRole="header" aria-level={1}>{title}</Text>
+        <Pressable
+          onPress={restart}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Start the prayer again from the beginning"
+        >
+          <Ionicons name="refresh-outline" size={22} color={Lumen.colors.muted} aria-hidden />
         </Pressable>
       </View>
 
-      <View style={styles.progressTrack}>
+      <View style={styles.progressTrack} aria-hidden accessible={false} importantForAccessibility="no-hide-descendants">
         <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
         <Label>{subtitle}</Label>
 
-        {/* Illuminated beads */}
-        <View style={styles.beadStage}>
+        {/* Illuminated beads — decorative; the words below say where we are. */}
+        <View style={styles.beadStage} aria-hidden accessible={false} importantForAccessibility="no-hide-descendants">
           <Ionicons
             name="add"
             size={26}
@@ -146,7 +163,7 @@ export function GuidedPrayer({
         {totalBeads > 1 && <Text style={styles.beadLabel}>Bead {bead} of {totalBeads}</Text>}
 
         <Text style={styles.stepCount}>Step {index + 1} of {steps.length}</Text>
-        <Text style={styles.title}>{step.title}</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={2}>{step.title}</Text>
         <Text style={styles.annotation}>{step.instruction}</Text>
 
         {step.announce && (
@@ -168,8 +185,14 @@ export function GuidedPrayer({
           </Text>
         </Card>
 
-        <Pressable style={styles.listen} onPress={speaking ? stopSpeech : speak}>
-          <Ionicons name={speaking ? 'stop' : 'volume-medium-outline'} size={20} color={Lumen.colors.accent} />
+        <Pressable
+          style={styles.listen}
+          onPress={speaking ? stopSpeech : speak}
+          accessibilityRole="button"
+          accessibilityLabel={speaking ? 'Stop the spoken prayer' : 'Pray aloud with me'}
+          accessibilityHint={speaking ? undefined : 'Reads this prayer aloud, word by word'}
+        >
+          <Ionicons name={speaking ? 'stop' : 'volume-medium-outline'} size={20} color={Lumen.colors.accent} aria-hidden />
           <Text style={styles.listenText}>{speaking ? 'Stop' : 'Pray aloud with me'}</Text>
         </Pressable>
 
@@ -177,7 +200,15 @@ export function GuidedPrayer({
         <View style={styles.speedRow}>
           <Text style={styles.speedLabel}>Pace</Text>
           {SPEEDS.map((s) => (
-            <Pressable key={s} style={[styles.speedChip, rate === s && styles.speedChipActive]} onPress={() => setRate(s)}>
+            <Pressable
+              key={s}
+              style={[styles.speedChip, rate === s && styles.speedChipActive]}
+              onPress={() => setRate(s)}
+              hitSlop={{ top: 8, bottom: 8 }}
+              accessibilityRole="button"
+              accessibilityLabel={`Pace ${s} times normal speed`}
+              accessibilityState={{ selected: rate === s }}
+            >
               <Text style={[styles.speedText, rate === s && styles.speedTextActive]}>{s}×</Text>
             </Pressable>
           ))}
@@ -189,18 +220,30 @@ export function GuidedPrayer({
 
       {/* Controls */}
       <View style={styles.controls}>
-        <Pressable style={styles.ctrlSecondary} onPress={back} disabled={index === 0 && bead === 1}>
-          <Ionicons name="chevron-back" size={22} color={index === 0 && bead === 1 ? 'rgba(155,176,208,0.35)' : Lumen.colors.text} />
+        <Pressable
+          style={styles.ctrlSecondary}
+          onPress={back}
+          disabled={index === 0 && bead === 1}
+          accessibilityRole="button"
+          accessibilityLabel="Back one step"
+          accessibilityState={{ disabled: index === 0 && bead === 1 }}
+        >
+          <Ionicons name="chevron-back" size={22} color={index === 0 && bead === 1 ? 'rgba(155,176,208,0.35)' : Lumen.colors.text} aria-hidden />
         </Pressable>
         {isLast && bead >= totalBeads ? (
-          <Pressable style={styles.ctrlPrimary} onPress={restart}>
-            <Ionicons name="refresh" size={20} color="#0d1830" />
+          <Pressable style={styles.ctrlPrimary} onPress={restart} accessibilityRole="button" accessibilityLabel="Amen. Pray again from the beginning">
+            <Ionicons name="refresh" size={20} color="#0d1830" aria-hidden />
             <Text style={styles.ctrlPrimaryText}>Amen — pray again</Text>
           </Pressable>
         ) : (
-          <Pressable style={styles.ctrlPrimary} onPress={next}>
+          <Pressable
+            style={styles.ctrlPrimary}
+            onPress={next}
+            accessibilityRole="button"
+            accessibilityLabel={bead < totalBeads ? 'Next bead' : 'Continue to the next step'}
+          >
             <Text style={styles.ctrlPrimaryText}>{bead < totalBeads ? 'Next bead' : 'Continue'}</Text>
-            <Ionicons name="chevron-forward" size={20} color="#0d1830" />
+            <Ionicons name="chevron-forward" size={20} color="#0d1830" aria-hidden />
           </Pressable>
         )}
       </View>
@@ -237,7 +280,7 @@ const styles = StyleSheet.create({
   speedTextActive: { color: '#0d1830' },
   speedHint: { fontFamily: Lumen.fonts.body, fontSize: 12, color: Lumen.colors.muted, marginTop: 10, fontStyle: 'italic', textAlign: 'center' },
   controls: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 20, paddingTop: 12, paddingBottom: 8 },
-  ctrlSecondary: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: Lumen.colors.card, borderWidth: 1, borderColor: Lumen.colors.cardBorder },
-  ctrlPrimary: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 52, borderRadius: 26, backgroundColor: Lumen.colors.accent },
+  ctrlSecondary: { width: 52, minHeight: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', backgroundColor: Lumen.colors.card, borderWidth: 1, borderColor: Lumen.colors.cardBorder },
+  ctrlPrimary: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 52, borderRadius: 26, backgroundColor: Lumen.colors.accent },
   ctrlPrimaryText: { fontFamily: Lumen.fonts.bodyBold, color: '#0d1830', fontSize: 16 },
 });

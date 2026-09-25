@@ -1,11 +1,14 @@
 import { ReactNode } from 'react';
-import { View, Text, StyleSheet, ViewStyle, TextStyle, StyleProp } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, TextStyle, StyleProp, Platform } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Lumen } from '@/theme/lumen';
 import { useTheme } from '@/theme/ThemeContext';
 
-/** The lapis-navy gradient backdrop every screen sits on. */
+/**
+ * The lapis-navy gradient backdrop every screen sits on.
+ * On the web it is also the landing place of the skip-to-content link.
+ */
 export function Screen({
   children,
   edges = ['top'],
@@ -16,7 +19,12 @@ export function Screen({
   const { theme } = useTheme();
   return (
     <LinearGradient colors={theme.gradient} style={{ flex: 1 }}>
-      <SafeAreaView style={{ flex: 1 }} edges={edges}>
+      <SafeAreaView
+        style={{ flex: 1 }}
+        edges={edges}
+        nativeID="main-content"
+        {...(Platform.OS === 'web' ? { role: 'main' as const } : {})}
+      >
         {children}
       </SafeAreaView>
     </LinearGradient>
@@ -34,9 +42,16 @@ export function Card({
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-/** A small-caps section label in Cinzel. */
+/**
+ * A small-caps section label in Cinzel — and, to a screen reader, a real
+ * heading, so people can jump section by section through every page.
+ */
 export function Label({ children, style }: { children: ReactNode; style?: StyleProp<TextStyle> }) {
-  return <Text style={[styles.label, style]}>{children}</Text>;
+  return (
+    <Text style={[styles.label, style]} accessibilityRole="header" aria-level={2}>
+      {children}
+    </Text>
+  );
 }
 
 const styles = StyleSheet.create({

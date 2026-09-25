@@ -51,8 +51,8 @@ export default function Home() {
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <Text style={styles.greeting}>{greeting(now)}</Text>
-        <Text style={styles.wordmark}>Holy Bible</Text>
-        <Text style={styles.subwordmark}>· AI Assisted ·</Text>
+        <Text style={styles.wordmark} accessibilityRole="header" aria-level={1}>Holy Bible</Text>
+        <Text style={styles.subwordmark} accessibilityLabel="A I Assisted">· AI Assisted ·</Text>
 
         {/* Verse of the day */}
         <Card style={{ marginTop: 22 }}>
@@ -68,7 +68,11 @@ export default function Home() {
               <Label>The day</Label>
               <Text style={styles.litDate}>{lit.dateLabel}</Text>
             </View>
-            <View style={[styles.swatch, { backgroundColor: COLOR_SWATCH[lit.color] }]} />
+            <View
+              style={[styles.swatch, { backgroundColor: COLOR_SWATCH[lit.color] }]}
+              accessibilityRole="image"
+              accessibilityLabel={`Liturgical colour: ${lit.color}`}
+            />
           </View>
           <View style={styles.litRow}>
             <LitFact label="Season" value={lit.season} />
@@ -110,15 +114,20 @@ function Way({
   icon, title, sub, onPress, accent,
 }: { icon: any; title: string; sub: string; onPress: () => void; accent: string }) {
   return (
-    <Pressable style={({ pressed }) => [styles.way, pressed && { opacity: 0.7 }]} onPress={onPress}>
-      <View style={[styles.wayIcon, { borderColor: accent + '55' }]}>
+    <Pressable
+      style={({ pressed }) => [styles.way, pressed && { opacity: 0.7 }]}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${sub}`}
+    >
+      <View style={[styles.wayIcon, { borderColor: accent + '55' }]} aria-hidden>
         <Ionicons name={icon} size={22} color={accent} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.wayTitle}>{title}</Text>
         <Text style={styles.waySub}>{sub}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={20} color={Lumen.colors.muted} />
+      <Ionicons name="chevron-forward" size={20} color={Lumen.colors.muted} aria-hidden />
     </Pressable>
   );
 }

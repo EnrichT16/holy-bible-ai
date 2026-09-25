@@ -7,6 +7,7 @@ import { Card, Label } from '@/components/ui';
 import { GuidePage } from '@/components/GuidePage';
 import { findSession } from '@/data/mentorship';
 import { explainPassage } from '@/lib/claudeApi';
+import { announce } from '@/lib/a11y';
 
 /**
  * One seminar session, with the AI guide at the end for questions
@@ -50,8 +51,10 @@ function AskGuide({ sessionTitle, aim }: { sessionTitle: string; aim: string }) 
         question: q,
       });
       setAnswer(res);
+      announce('Your guide has answered, below the question box.');
     } catch (e: any) {
       setError(e?.message ?? 'The guide is unavailable right now.');
+      announce('The guide could not answer just now.');
     } finally {
       setBusy(false);
     }
@@ -68,13 +71,21 @@ function AskGuide({ sessionTitle, aim }: { sessionTitle: string; aim: string }) 
           value={question}
           onChangeText={setQuestion}
           multiline
+          accessibilityLabel="Ask your guide a question from this session"
         />
-        <Pressable style={[styles.askBtn, busy && { opacity: 0.6 }]} onPress={ask} disabled={busy}>
+        <Pressable
+          style={[styles.askBtn, busy && { opacity: 0.6 }]}
+          onPress={ask}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel="Ask your guide"
+          accessibilityState={{ disabled: busy }}
+        >
           {busy ? (
             <ActivityIndicator color="#0d1830" />
           ) : (
             <>
-              <Ionicons name="sparkles-outline" size={16} color="#0d1830" />
+              <Ionicons name="sparkles-outline" size={16} color="#0d1830" aria-hidden />
               <Text style={styles.askText}>Ask</Text>
             </>
           )}
@@ -91,7 +102,7 @@ function AskGuide({ sessionTitle, aim }: { sessionTitle: string; aim: string }) 
 
 const styles = StyleSheet.create({
   input: { fontFamily: Lumen.fonts.body, fontSize: 15, color: Lumen.colors.text, minHeight: 60, textAlignVertical: 'top' },
-  askBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'flex-end', marginTop: 10, height: 40, paddingHorizontal: 22, borderRadius: 20, backgroundColor: Lumen.colors.accent },
+  askBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, alignSelf: 'flex-end', marginTop: 10, minHeight: 40, paddingHorizontal: 22, borderRadius: 20, backgroundColor: Lumen.colors.accent },
   askText: { fontFamily: Lumen.fonts.bodyBold, color: '#0d1830', fontSize: 14 },
   error: { fontFamily: Lumen.fonts.body, fontSize: 13, lineHeight: 19, color: '#d99', marginTop: 12 },
   answer: { fontFamily: Lumen.fonts.body, fontSize: 15, lineHeight: 23, color: Lumen.colors.text, marginTop: 14 },

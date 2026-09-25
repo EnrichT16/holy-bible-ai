@@ -30,7 +30,7 @@ export default function Library() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>The Library</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={1}>The Library</Text>
         <Text style={styles.subtitle}>Full public-domain works, free to read and to hear. Every book can be read aloud.</Text>
 
         <Label style={styles.sectionLabel}>Featured works</Label>
@@ -46,9 +46,14 @@ export default function Library() {
 
         <Label style={styles.sectionLabel}>Collections</Label>
         {COLLECTIONS.map((c) => (
-          <Pressable key={c.id} onPress={() => router.push(`/collection/${c.id}` as any)}>
+          <Pressable
+            key={c.id}
+            onPress={() => router.push(`/collection/${c.id}` as any)}
+            accessibilityRole="button"
+            accessibilityLabel={`${c.title}. ${c.sub}. ${c.entries.length} entries`}
+          >
             <Card style={styles.row}>
-              <Ionicons name={c.icon as any} size={22} color={Lumen.colors.accent} />
+              <Ionicons name={c.icon as any} size={22} color={Lumen.colors.accent} aria-hidden />
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{c.title}</Text>
                 <Text style={styles.rowSub}>{c.sub} · {c.entries.length} entries</Text>
@@ -69,9 +74,9 @@ export default function Library() {
         </Card>
 
         <Label style={styles.sectionLabel}>Grow the library</Label>
-        <Pressable onPress={() => router.push('/free-books')}>
+        <Pressable onPress={() => router.push('/free-books')} accessibilityRole="button" accessibilityLabel="Find free books. Trusted sources of free spiritual reading">
           <Card style={styles.row}>
-            <Ionicons name="search-outline" size={22} color={Lumen.colors.accent} />
+            <Ionicons name="search-outline" size={22} color={Lumen.colors.accent} aria-hidden />
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>Find free books</Text>
               <Text style={styles.rowSub}>CCEL · Gutenberg · Internet Archive · Wikisource</Text>
@@ -79,9 +84,9 @@ export default function Library() {
             <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
           </Card>
         </Pressable>
-        <Pressable onPress={() => router.push('/submit-book')}>
+        <Pressable onPress={() => router.push('/submit-book')} accessibilityRole="button" accessibilityLabel="Submit your book. Reviewed with its author before publishing">
           <Card style={styles.row}>
-            <Ionicons name="cloud-upload-outline" size={22} color={Lumen.colors.accent} />
+            <Ionicons name="cloud-upload-outline" size={22} color={Lumen.colors.accent} aria-hidden />
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>Submit your book</Text>
               <Text style={styles.rowSub}>Reviewed with its author before publishing</Text>

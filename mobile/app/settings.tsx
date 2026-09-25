@@ -23,22 +23,30 @@ export default function Settings() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} />
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>App</Text>
+        <Text style={styles.headerTitle} aria-hidden>App</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Settings</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={1}>Settings</Text>
 
         {available && (
           <>
             <Label style={styles.sectionLabel}>Account</Label>
-            <Pressable onPress={() => router.push('/account')}>
+            <Pressable
+              onPress={() => router.push('/account')}
+              accessibilityRole="button"
+              accessibilityLabel={
+                status === 'signed-in'
+                  ? `Your account, ${profile?.display_name || ''}. ${profile?.prayer_id ? `Prayer ID ${profile.prayer_id}` : 'Your prayer ID and your circle'}`
+                  : 'Sign in. Only needed for the Prayer Circle'
+              }
+            >
               <Card style={styles.linkRow}>
-                <Ionicons name="person-circle-outline" size={22} color={Lumen.colors.accent} />
+                <Ionicons name="person-circle-outline" size={22} color={Lumen.colors.accent} aria-hidden />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.linkTitle}>
                     {status === 'signed-in' ? profile?.display_name || 'Your account' : 'Sign in'}
@@ -63,7 +71,14 @@ export default function Settings() {
             {VERSIONS.map((v) => {
               const active = v.id === versionId;
               return (
-                <Pressable key={v.id} style={[styles.chip, active && styles.chipActive]} onPress={() => setVersion(v.id)}>
+                <Pressable
+                  key={v.id}
+                  style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => setVersion(v.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={v.name}
+                  accessibilityState={{ selected: active }}
+                >
                   <Text style={[styles.chipText, active && styles.chipTextActive]}>{v.abbrev}</Text>
                 </Pressable>
               );
@@ -78,7 +93,14 @@ export default function Settings() {
             {TEXT_SIZES.map((t) => {
               const active = t.key === textSize;
               return (
-                <Pressable key={t.key} style={[styles.chip, active && styles.chipActive]} onPress={() => setTextSize(t.key)}>
+                <Pressable
+                  key={t.key}
+                  style={[styles.chip, active && styles.chipActive]}
+                  onPress={() => setTextSize(t.key)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Text size ${t.label}`}
+                  accessibilityState={{ selected: active }}
+                >
                   <Text style={[styles.chipText, active && styles.chipTextActive]}>{t.label}</Text>
                 </Pressable>
               );
@@ -91,8 +113,14 @@ export default function Settings() {
 
         <Label style={styles.sectionLabel}>Home theme</Label>
         <Card>
-          <Pressable style={styles.themeRow} onPress={clearPin}>
-            <View style={[styles.swatch, { backgroundColor: '#1a2b4d', borderColor: !isPinned ? Lumen.colors.accent : Lumen.colors.cardBorder }]}>
+          <Pressable
+            style={styles.themeRow}
+            onPress={clearPin}
+            accessibilityRole="button"
+            accessibilityLabel="Rotate the theme daily. Lumen, Vox, Sanctus and Aurora, a new light each day"
+            accessibilityState={{ selected: !isPinned }}
+          >
+            <View style={[styles.swatch, { backgroundColor: '#1a2b4d', borderColor: !isPinned ? Lumen.colors.accent : Lumen.colors.cardBorder }]} aria-hidden>
               <Ionicons name="sync-outline" size={16} color={Lumen.colors.accent2} />
             </View>
             <View style={{ flex: 1 }}>
@@ -105,8 +133,15 @@ export default function Settings() {
             const t = HOME_THEMES[key];
             const active = isPinned && pinnedName === key;
             return (
-              <Pressable key={key} style={styles.themeRow} onPress={() => setTheme(key)}>
-                <View style={[styles.swatch, { backgroundColor: t.gradient[0], borderColor: active ? Lumen.colors.accent : Lumen.colors.cardBorder }]} />
+              <Pressable
+                key={key}
+                style={styles.themeRow}
+                onPress={() => setTheme(key)}
+                accessibilityRole="button"
+                accessibilityLabel={`Theme ${t.label}. ${t.note}`}
+                accessibilityState={{ selected: active }}
+              >
+                <View style={[styles.swatch, { backgroundColor: t.gradient[0], borderColor: active ? Lumen.colors.accent : Lumen.colors.cardBorder }]} aria-hidden />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.themeName}>{t.label}</Text>
                   <Text style={styles.themeNote}>{t.note}</Text>
@@ -118,9 +153,9 @@ export default function Settings() {
         </Card>
 
         <Label style={styles.sectionLabel}>Prayer</Label>
-        <Pressable onPress={() => router.push('/reminders')}>
+        <Pressable onPress={() => router.push('/reminders')} accessibilityRole="button" accessibilityLabel="Reminders. The hours of prayer, ringing daily">
           <Card style={styles.linkRow}>
-            <Ionicons name="notifications-outline" size={22} color={Lumen.colors.accent} />
+            <Ionicons name="notifications-outline" size={22} color={Lumen.colors.accent} aria-hidden />
             <View style={{ flex: 1 }}>
               <Text style={styles.linkTitle}>Reminders</Text>
               <Text style={styles.linkSub}>The hours of prayer, ringing daily</Text>
@@ -129,9 +164,9 @@ export default function Settings() {
           </Card>
         </Pressable>
 
-        <Pressable onPress={() => router.push('/circle')}>
+        <Pressable onPress={() => router.push('/circle')} accessibilityRole="button" accessibilityLabel="Prayer Circle. The friends you pray with, and their intentions">
           <Card style={[styles.linkRow, { marginTop: 10 }]}>
-            <Ionicons name="people-outline" size={22} color={Lumen.colors.accent} />
+            <Ionicons name="people-outline" size={22} color={Lumen.colors.accent} aria-hidden />
             <View style={{ flex: 1 }}>
               <Text style={styles.linkTitle}>Prayer Circle</Text>
               <Text style={styles.linkSub}>The friends you pray with, and their intentions</Text>

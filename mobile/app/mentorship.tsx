@@ -14,15 +14,15 @@ export default function Mentorship() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} />
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>Mentorship</Text>
+        <Text style={styles.headerTitle} aria-hidden>Mentorship</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Life in the Spirit</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={1}>Life in the Spirit</Text>
         <Text style={styles.subtitle}>
           The classic seven-week seminar — from knowing God's love to a Spirit-filled,
           sent-out life. Walk one session a week; don't hurry the fire.
@@ -30,16 +30,21 @@ export default function Mentorship() {
 
         <Label style={{ marginTop: 24, marginBottom: 10 }}>The seven sessions</Label>
         {SEMINAR.map((s) => (
-          <Pressable key={s.id} onPress={() => router.push(`/seminar/${s.id}` as any)}>
+          <Pressable
+            key={s.id}
+            onPress={() => router.push(`/seminar/${s.id}` as any)}
+            accessibilityRole="button"
+            accessibilityLabel={`Week ${s.week}. ${s.title}. ${s.aim}`}
+          >
             <Card style={styles.row}>
-              <View style={styles.week}>
+              <View style={styles.week} aria-hidden>
                 <Text style={styles.weekNum}>{s.week}</Text>
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.rowTitle}>{s.title}</Text>
                 <Text style={styles.rowSub}>{s.aim}</Text>
               </View>
-              <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
+              <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} aria-hidden />
             </Card>
           </Pressable>
         ))}

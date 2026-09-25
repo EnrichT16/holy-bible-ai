@@ -52,21 +52,26 @@ export function GuidePage({ content, footer }: { content: GuideContent; footer?:
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => { Speech.stop(); router.back(); }} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} />
+        <Pressable
+          onPress={() => { Speech.stop(); router.back(); }}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Go back"
+        >
+          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>{content.title}</Text>
+        <Text style={styles.headerTitle} numberOfLines={1} aria-hidden>{content.title}</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{content.title}</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={1}>{content.title}</Text>
         {content.subtitle && <Text style={styles.subtitle}>{content.subtitle}</Text>}
 
         {content.sections.map((s, i) => (
           <View key={i} style={{ marginTop: 22 }}>
             {s.label && <Label style={{ marginBottom: 8 }}>{s.label}</Label>}
-            {s.heading && <Text style={styles.heading}>{s.heading}</Text>}
+            {s.heading && <Text style={styles.heading} accessibilityRole="header" aria-level={3}>{s.heading}</Text>}
             {s.body?.map((p, j) => (
               <Text key={j} style={styles.paragraph}>{p}</Text>
             ))}
@@ -90,11 +95,21 @@ export function GuidePage({ content, footer }: { content: GuideContent; footer?:
               <Card style={{ marginTop: 10 }}>
                 <Text style={styles.prayerTitle}>{s.prayer.title}</Text>
                 <Text style={styles.prayerText}>{s.prayer.text}</Text>
-                <Pressable style={styles.listen} onPress={() => speak(`p${i}`, s.prayer!.text)}>
+                <Pressable
+                  style={styles.listen}
+                  onPress={() => speak(`p${i}`, s.prayer!.text)}
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    speakingId === `p${i}`
+                      ? `Stop reading ${s.prayer!.title} aloud`
+                      : `Pray ${s.prayer!.title} aloud with me`
+                  }
+                >
                   <Ionicons
                     name={speakingId === `p${i}` ? 'stop' : 'volume-medium-outline'}
                     size={18}
                     color={Lumen.colors.accent}
+                    aria-hidden
                   />
                   <Text style={styles.listenText}>{speakingId === `p${i}` ? 'Stop' : 'Pray aloud with me'}</Text>
                 </Pressable>
@@ -107,8 +122,11 @@ export function GuidePage({ content, footer }: { content: GuideContent; footer?:
                   if (s.cta!.route) router.push(s.cta!.route as any);
                   else if (s.cta!.url) Linking.openURL(s.cta!.url).catch(() => {});
                 }}
+                accessibilityRole={s.cta.url ? 'link' : 'button'}
+                accessibilityLabel={s.cta.label}
+                accessibilityHint={s.cta.url ? 'Opens in your browser' : undefined}
               >
-                <Ionicons name={(s.cta.icon as any) ?? 'arrow-forward'} size={18} color="#0d1830" />
+                <Ionicons name={(s.cta.icon as any) ?? 'arrow-forward'} size={18} color="#0d1830" aria-hidden />
                 <Text style={styles.ctaText}>{s.cta.label}</Text>
               </Pressable>
             )}
@@ -140,7 +158,7 @@ const styles = StyleSheet.create({
   prayerText: { fontFamily: Lumen.fonts.display, fontSize: 18, lineHeight: 28, color: Lumen.colors.text },
   listen: { flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', gap: 8, marginTop: 12, paddingVertical: 8, paddingHorizontal: 14, borderRadius: Lumen.radius.pill, borderWidth: 1, borderColor: Lumen.colors.cardBorder },
   listenText: { fontFamily: Lumen.fonts.bodyBold, color: Lumen.colors.accent, fontSize: 13 },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, height: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 14, minHeight: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent },
   ctaText: { fontFamily: Lumen.fonts.bodyBold, color: '#0d1830', fontSize: 15 },
   footnote: { fontFamily: Lumen.fonts.body, fontSize: 12.5, lineHeight: 19, color: Lumen.colors.muted, fontStyle: 'italic', marginTop: 26 },
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,10 @@ import { Screen, Card, Label } from '@/components/ui';
 import { useAccount } from '@/state/AccountContext';
 import { sendRecoveryEmail } from '@/lib/auth';
 import { shareText } from '@/lib/share';
+import { announce } from '@/lib/a11y';
+
+/** Read a prayer ID character by character, as a screen reader should. */
+const spellPrayerId = (id: string) => id.split('').map((ch) => (ch === '-' ? 'dash' : ch)).join(' ');
 
 /**
  * Account — the door to the Prayer Circle, and nothing more.
@@ -32,10 +36,10 @@ export default function Account() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} />
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>App</Text>
+        <Text style={styles.headerTitle} aria-hidden>App</Text>
         <View style={{ width: 26 }} />
       </View>
 
@@ -48,7 +52,7 @@ export default function Account() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <Text style={styles.title}>Your account</Text>
+          <Text style={styles.title} accessibilityRole="header" aria-level={1}>Your account</Text>
 
           {!available ? (
             <Card style={{ marginTop: 18 }}>
@@ -105,6 +109,17 @@ function SignedIn({
   const [note, setNote] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
 
+  // Say the prayer ID once when it appears, and every note or problem.
+  useEffect(() => {
+    if (prayerId) announce(`Signed in. Your prayer ID is ${spellPrayerId(prayerId)}.`);
+  }, [prayerId]);
+  useEffect(() => {
+    if (note) announce(note);
+  }, [note]);
+  useEffect(() => {
+    if (problem) announce(problem);
+  }, [problem]);
+
   const save = async () => {
     setBusy(true);
     setProblem(null);
@@ -136,13 +151,25 @@ function SignedIn({
     <>
       <Label style={styles.sectionLabel}>Your prayer ID</Label>
       <Card>
-        <Text style={styles.prayerId}>{prayerId || '—'}</Text>
+        <Text
+          style={styles.prayerId}
+          accessibilityLabel={prayerId ? `Your prayer ID: ${spellPrayerId(prayerId)}` : 'Your prayer ID is still being made'}
+        >
+          {prayerId || '—'}
+        </Text>
         <Text style={styles.quiet}>
           This is how a friend finds you. Give it to the people you want in your circle —
           it reveals nothing else about you, and only those you accept can see your name.
         </Text>
-        <Pressable style={styles.primary} onPress={share} disabled={!prayerId}>
-          <Ionicons name="share-outline" size={17} color="#0d1830" />
+        <Pressable
+          style={styles.primary}
+          onPress={share}
+          disabled={!prayerId}
+          accessibilityRole="button"
+          accessibilityLabel="Share your prayer ID"
+          accessibilityState={{ disabled: !prayerId }}
+        >
+          <Ionicons name="share-outline" size={17} color="#0d1830" aria-hidden />
           <Text style={styles.primaryText}>Share your prayer ID</Text>
         </Pressable>
       </Card>
@@ -157,11 +184,12 @@ function SignedIn({
               value={draft}
               onChangeText={setDraft}
               placeholder="Anna"
-              placeholderTextColor={'rgba(155,176,208,0.5)'}
+              placeholderTextColor={'rgba(155,176,208,0.8)'}
               autoFocus
+              accessibilityLabel="The name your circle sees"
             />
             <View style={styles.rowButtons}>
-              <Pressable style={[styles.primary, styles.grow]} onPress={save} disabled={busy}>
+              <Pressable style={[styles.primary, styles.grow]} onPress={save} disabled={busy} accessibilityRole="button" accessibilityLabel="Save your name">
                 {busy ? (
                   <ActivityIndicator color="#0d1830" />
                 ) : (
@@ -175,6 +203,8 @@ function SignedIn({
                   setEditing(false);
                   setProblem(null);
                 }}
+                accessibilityRole="button"
+                accessibilityLabel="Cancel renaming"
               >
                 <Text style={styles.secondaryText}>Cancel</Text>
               </Pressable>
@@ -188,9 +218,12 @@ function SignedIn({
               setEditing(true);
               setNote(null);
             }}
+            accessibilityRole="button"
+            accessibilityLabel={`Your name is ${name || 'A friend in Christ'}`}
+            accessibilityHint="Change the name your circle sees"
           >
             <Text style={styles.name}>{name || 'A friend in Christ'}</Text>
-            <Ionicons name="create-outline" size={18} color={Lumen.colors.accent} />
+            <Ionicons name="create-outline" size={18} color={Lumen.colors.accent} aria-hidden />
           </Pressable>
         )}
         <Text style={styles.emailLine}>{email}</Text>
@@ -198,19 +231,23 @@ function SignedIn({
         {problem && <Text style={styles.problem}>{problem}</Text>}
       </Card>
 
-      <Pressable onPress={onOpenCircle}>
+      <Pressable
+        onPress={onOpenCircle}
+        accessibilityRole="button"
+        accessibilityLabel="Your Prayer Circle. The friends you pray with, and their intentions"
+      >
         <Card style={[styles.linkRow, { marginTop: 22 }]}>
-          <Ionicons name="people-outline" size={22} color={Lumen.colors.accent} />
+          <Ionicons name="people-outline" size={22} color={Lumen.colors.accent} aria-hidden />
           <View style={{ flex: 1 }}>
             <Text style={styles.linkTitle}>Your Prayer Circle</Text>
             <Text style={styles.linkSub}>The friends you pray with, and their intentions</Text>
           </View>
-          <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
+          <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} aria-hidden />
         </Card>
       </Pressable>
 
-      <Pressable style={[styles.secondary, { marginTop: 22 }]} onPress={onSignOut}>
-        <Ionicons name="log-out-outline" size={17} color={Lumen.colors.muted} />
+      <Pressable style={[styles.secondary, { marginTop: 22 }]} onPress={onSignOut} accessibilityRole="button" accessibilityLabel="Sign out">
+        <Ionicons name="log-out-outline" size={17} color={Lumen.colors.muted} aria-hidden />
         <Text style={styles.secondaryText}>Sign out</Text>
       </Pressable>
 
@@ -238,6 +275,13 @@ function SignedOut({
   const [busy, setBusy] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (note) announce(note);
+  }, [note]);
+  useEffect(() => {
+    if (problem) announce(problem);
+  }, [problem]);
 
   const creating = mode === 'up';
   const ready =
@@ -297,6 +341,9 @@ function SignedOut({
             setProblem(null);
             setNote(null);
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Sign in to an existing account"
+          accessibilityState={{ selected: !creating }}
         >
           <Text style={[styles.switchText, !creating && styles.switchTextActive]}>Sign in</Text>
         </Pressable>
@@ -307,6 +354,9 @@ function SignedOut({
             setProblem(null);
             setNote(null);
           }}
+          accessibilityRole="button"
+          accessibilityLabel="Create a new account"
+          accessibilityState={{ selected: creating }}
         >
           <Text style={[styles.switchText, creating && styles.switchTextActive]}>Create an account</Text>
         </Pressable>
@@ -338,33 +388,54 @@ function SignedOut({
               value={password}
               onChangeText={setPassword}
               placeholder="At least six characters"
-              placeholderTextColor={'rgba(155,176,208,0.5)'}
+              placeholderTextColor={'rgba(155,176,208,0.8)'}
               secureTextEntry={!reveal}
               autoCapitalize="none"
+              accessibilityLabel="Password, at least six characters"
             />
-            <Pressable onPress={() => setReveal((r) => !r)} hitSlop={10} style={{ paddingHorizontal: 10 }}>
+            <Pressable
+              onPress={() => setReveal((r) => !r)}
+              hitSlop={10}
+              style={{ paddingHorizontal: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={reveal ? 'Hide the password' : 'Show the password'}
+            >
               <Ionicons
                 name={reveal ? 'eye-off-outline' : 'eye-outline'}
                 size={19}
                 color={Lumen.colors.muted}
+                aria-hidden
               />
             </Pressable>
           </View>
         </View>
 
-        <Pressable style={[styles.primary, !ready && { opacity: 0.45 }]} disabled={!ready} onPress={submit}>
+        <Pressable
+          style={[styles.primary, !ready && { opacity: 0.45 }]}
+          disabled={!ready}
+          onPress={submit}
+          accessibilityRole="button"
+          accessibilityLabel={creating ? 'Create my account' : 'Sign in'}
+          accessibilityState={{ disabled: !ready }}
+        >
           {busy ? (
             <ActivityIndicator color="#0d1830" />
           ) : (
             <>
-              <Ionicons name={creating ? 'person-add-outline' : 'log-in-outline'} size={17} color="#0d1830" />
+              <Ionicons name={creating ? 'person-add-outline' : 'log-in-outline'} size={17} color="#0d1830" aria-hidden />
               <Text style={styles.primaryText}>{creating ? 'Create my account' : 'Sign in'}</Text>
             </>
           )}
         </Pressable>
 
         {!creating && (
-          <Pressable onPress={recover} disabled={busy}>
+          <Pressable
+            onPress={recover}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel="I have forgotten my password"
+            accessibilityHint="Sends a link to set a new password to your email"
+          >
             <Text style={styles.forgot}>I have forgotten my password</Text>
           </Pressable>
         )}
@@ -404,10 +475,11 @@ function Field({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor={'rgba(155,176,208,0.5)'}
+        placeholderTextColor={'rgba(155,176,208,0.8)'}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
         autoCorrect={false}
+        accessibilityLabel={label}
       />
     </View>
   );
@@ -428,9 +500,9 @@ const styles = StyleSheet.create({
   fieldLabel: { fontFamily: Lumen.fonts.label, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: Lumen.colors.accent, marginBottom: 6 },
   input: { fontFamily: Lumen.fonts.body, fontSize: 15, color: Lumen.colors.text, borderWidth: 1, borderColor: Lumen.colors.cardBorder, borderRadius: Lumen.radius.md, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.03)' },
   passwordRow: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: Lumen.colors.cardBorder, borderRadius: Lumen.radius.md, backgroundColor: 'rgba(255,255,255,0.03)' },
-  primary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent, marginTop: 4 },
+  primary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent, marginTop: 4 },
   primaryText: { fontFamily: Lumen.fonts.bodyBold, color: '#0d1830', fontSize: 15 },
-  secondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 24, borderWidth: 1, borderColor: Lumen.colors.cardBorder },
+  secondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48, borderRadius: 24, borderWidth: 1, borderColor: Lumen.colors.cardBorder },
   secondaryText: { fontFamily: Lumen.fonts.bodyBold, color: Lumen.colors.muted, fontSize: 15 },
   rowButtons: { flexDirection: 'row', gap: 10, marginTop: 6 },
   grow: { flex: 1 },

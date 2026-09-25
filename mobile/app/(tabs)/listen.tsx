@@ -11,10 +11,12 @@ import { BOOKS, Book, findBook } from '@/data/books';
 import { loadChapter } from '@/lib/bibleApi';
 import { explainPassage } from '@/lib/claudeApi';
 import { useVersion } from '@/state/VersionContext';
+import { announce, useReducedMotion } from '@/lib/a11y';
 
 export default function Listen() {
   const params = useLocalSearchParams<{ version?: string; book?: string; chapter?: string; verse?: string }>();
   const { versionId, version, setVersion } = useVersion();
+  const reducedMotion = useReducedMotion();
   const [book, setBook] = useState<Book>(findBook('Psalms')!);
   const [chapter, setChapter] = useState(23);
   const [text, setText] = useState('');
@@ -46,6 +48,7 @@ export default function Listen() {
         if (!alive) return;
         setReference(res.reference);
         setText(res.verses.map((v) => v.text).join(' '));
+        announce(`${res.reference} is ready.`);
       } catch {
         if (alive) setText('This passage could not be loaded. Check your connection and try another.');
       } finally {
@@ -63,9 +66,11 @@ export default function Listen() {
     if (speaking) {
       Speech.stop();
       setSpeaking(false);
+      announce('Reading stopped.');
       return;
     }
     setSpeaking(true);
+    announce('Reading aloud.');
     Speech.speak(text, {
       rate: 0.9,
       onDone: () => setSpeaking(false),
@@ -79,9 +84,12 @@ export default function Listen() {
     setAiError(null);
     setAnswer('');
     try {
-      setAnswer(await explainPassage({ mode, reference, passage: text, question: mode === 'ask' ? question : undefined }));
+      const reflection = await explainPassage({ mode, reference, passage: text, question: mode === 'ask' ? question : undefined });
+      setAnswer(reflection);
+      announce('The reflection is ready, below the question box.');
     } catch (e: any) {
       setAiError(e.message ?? 'The guide is resting. Try again shortly.');
+      announce('The guide could not answer just now.');
     } finally {
       setThinking(false);
     }
@@ -90,31 +98,52 @@ export default function Listen() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Speak the Word</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={1}>Speak the Word</Text>
         <Text style={styles.epigraph}>
           “Thou shalt also decree a thing, and it shall be established unto thee: and the light shall
           shine upon thy ways.”
         </Text>
         <Text style={styles.epigraphRef}>Job 22:28 · KJV</Text>
 
-        <Pressable style={styles.refBar} onPress={() => setPickerOpen(true)}>
-          <Ionicons name="book-outline" size={16} color={Lumen.colors.accent} />
+        <Pressable
+          style={styles.refBar}
+          onPress={() => setPickerOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Passage: ${reference}`}
+          accessibilityHint="Choose a different passage"
+        >
+          <Ionicons name="book-outline" size={16} color={Lumen.colors.accent} aria-hidden />
           <Text style={styles.refText}>{reference}</Text>
-          <Ionicons name="chevron-down" size={16} color={Lumen.colors.accent} />
+          <Ionicons name="chevron-down" size={16} color={Lumen.colors.accent} aria-hidden />
         </Pressable>
 
         <Card style={{ marginTop: 16, minHeight: 120, justifyContent: 'center' }}>
           {loading ? <ActivityIndicator color={Lumen.colors.accent} /> : <Text style={styles.passage}>{text}</Text>}
         </Card>
 
-        <Pressable style={[styles.speakBtn, speaking && styles.speakBtnActive]} onPress={toggleSpeak} disabled={loading}>
-          <Ionicons name={speaking ? 'stop' : 'play'} size={22} color="#0d1830" />
+        <Pressable
+          style={[styles.speakBtn, speaking && styles.speakBtnActive]}
+          onPress={toggleSpeak}
+          disabled={loading}
+          accessibilityRole="button"
+          accessibilityLabel={speaking ? 'Stop reading aloud' : `Read ${reference} aloud`}
+          accessibilityState={{ disabled: loading }}
+        >
+          <Ionicons name={speaking ? 'stop' : 'play'} size={22} color="#0d1830" aria-hidden />
           <Text style={styles.speakText}>{speaking ? 'Stop reading' : 'Read aloud'}</Text>
         </Pressable>
 
         <Label style={{ marginTop: 28, marginBottom: 12 }}>Understand it</Label>
-        <Pressable style={styles.explainBtn} onPress={() => runAi('explain')} disabled={thinking || loading}>
-          <Ionicons name="bulb-outline" size={18} color={Lumen.colors.accent} />
+        <Pressable
+          style={styles.explainBtn}
+          onPress={() => runAi('explain')}
+          disabled={thinking || loading}
+          accessibilityRole="button"
+          accessibilityLabel="Explain this passage"
+          accessibilityHint="Asks the guide for a short reflection on the whole passage"
+          accessibilityState={{ disabled: thinking || loading }}
+        >
+          <Ionicons name="bulb-outline" size={18} color={Lumen.colors.accent} aria-hidden />
           <Text style={styles.explainText}>Explain this passage</Text>
         </Pressable>
 
@@ -126,13 +155,17 @@ export default function Listen() {
             value={question}
             onChangeText={setQuestion}
             multiline
+            accessibilityLabel="Ask anything about this passage"
           />
           <Pressable
             style={[styles.askSend, (!question.trim() || thinking) && { opacity: 0.4 }]}
             onPress={() => runAi('ask')}
             disabled={!question.trim() || thinking || loading}
+            accessibilityRole="button"
+            accessibilityLabel="Send your question to the guide"
+            accessibilityState={{ disabled: !question.trim() || thinking || loading }}
           >
-            <Ionicons name="arrow-up" size={20} color="#0d1830" />
+            <Ionicons name="arrow-up" size={20} color="#0d1830" aria-hidden />
           </Pressable>
         </View>
 
@@ -158,6 +191,7 @@ export default function Listen() {
 
       <ChapterPicker
         open={pickerOpen}
+        reducedMotion={reducedMotion}
         onClose={() => setPickerOpen(false)}
         onChoose={(b, c) => {
           setBook(b);
@@ -169,31 +203,48 @@ export default function Listen() {
   );
 }
 
-function ChapterPicker({ open, onClose, onChoose }: { open: boolean; onClose: () => void; onChoose: (b: Book, c: number) => void }) {
+function ChapterPicker({ open, reducedMotion, onClose, onChoose }: { open: boolean; reducedMotion?: boolean; onClose: () => void; onChoose: (b: Book, c: number) => void }) {
   const [book, setBook] = useState<Book | null>(null);
   const chapters = useMemo(() => (book ? Array.from({ length: book.chapters }, (_, i) => i + 1) : []), [book]);
   return (
-    <Modal visible={open} animationType="slide" onRequestClose={onClose}>
-      <View style={styles.pickerRoot}>
+    <Modal visible={open} animationType={reducedMotion ? 'none' : 'slide'} onRequestClose={onClose}>
+      <View style={styles.pickerRoot} accessibilityViewIsModal aria-modal>
         <View style={styles.pickerHeader}>
-          <Text style={styles.pickerTitle}>{book ? `${book.name} — chapter` : 'Choose a passage'}</Text>
-          <Pressable onPress={book ? () => setBook(null) : onClose} hitSlop={12}>
-            <Ionicons name={book ? 'arrow-back' : 'close'} size={26} color={Lumen.colors.text} />
+          <Text style={styles.pickerTitle} accessibilityRole="header" aria-level={1}>{book ? `${book.name} — chapter` : 'Choose a passage'}</Text>
+          <Pressable
+            onPress={book ? () => setBook(null) : onClose}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={book ? 'Back to the list of books' : 'Close the passage chooser'}
+          >
+            <Ionicons name={book ? 'arrow-back' : 'close'} size={26} color={Lumen.colors.text} aria-hidden />
           </Pressable>
         </View>
         {!book ? (
           <ScrollView contentContainerStyle={{ padding: 16 }}>
             {BOOKS.map((b) => (
-              <Pressable key={b.name} style={styles.pickRow} onPress={() => setBook(b)}>
+              <Pressable
+                key={b.name}
+                style={styles.pickRow}
+                onPress={() => setBook(b)}
+                accessibilityRole="button"
+                accessibilityLabel={`${b.name}, ${b.chapters} chapters`}
+              >
                 <Text style={styles.pickName}>{b.name}</Text>
-                <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
+                <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} aria-hidden />
               </Pressable>
             ))}
           </ScrollView>
         ) : (
           <ScrollView contentContainerStyle={styles.chapterGrid}>
             {chapters.map((c) => (
-              <Pressable key={c} style={styles.chapterCell} onPress={() => onChoose(book, c)}>
+              <Pressable
+                key={c}
+                style={styles.chapterCell}
+                onPress={() => onChoose(book, c)}
+                accessibilityRole="button"
+                accessibilityLabel={`Chapter ${c}`}
+              >
                 <Text style={styles.chapterNum}>{c}</Text>
               </Pressable>
             ))}

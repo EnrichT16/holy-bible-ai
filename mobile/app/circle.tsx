@@ -18,6 +18,7 @@ import { Lumen } from '@/theme/lumen';
 import { Screen, Card, Label } from '@/components/ui';
 import { useAccount } from '@/state/AccountContext';
 import { shareText } from '@/lib/share';
+import { announce } from '@/lib/a11y';
 import {
   CircleFriend,
   Intention,
@@ -123,8 +124,13 @@ export default function Circle() {
               : 'This build carries no account keys yet, so the circle is quiet for now.'}
           </Text>
           {available && (
-            <Pressable style={styles.primary} onPress={() => router.push('/account')}>
-              <Ionicons name="person-add-outline" size={17} color="#0d1830" />
+            <Pressable
+              style={styles.primary}
+              onPress={() => router.push('/account')}
+              accessibilityRole="button"
+              accessibilityLabel="Sign in or create an account"
+            >
+              <Ionicons name="person-add-outline" size={17} color="#0d1830" aria-hidden />
               <Text style={styles.primaryText}>Sign in or create an account</Text>
             </Pressable>
           )}
@@ -176,24 +182,30 @@ export default function Circle() {
                       {invite.note ? <Text style={styles.rowNote}>“{invite.note}”</Text> : null}
                     </View>
                     <Pressable
-                      hitSlop={8}
+                      hitSlop={12}
                       style={styles.iconButton}
                       onPress={async () => {
                         await respondToInvite(invite.id, true);
+                        announce(`${invite.personName} has joined your circle.`);
                         await load();
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Accept the invitation from ${invite.personName}`}
                     >
-                      <Ionicons name="checkmark" size={20} color={Lumen.colors.accent} />
+                      <Ionicons name="checkmark" size={20} color={Lumen.colors.accent} aria-hidden />
                     </Pressable>
                     <Pressable
-                      hitSlop={8}
+                      hitSlop={12}
                       style={styles.iconButton}
                       onPress={async () => {
                         await respondToInvite(invite.id, false);
+                        announce('Invitation declined.');
                         await load();
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Decline the invitation from ${invite.personName}`}
                     >
-                      <Ionicons name="close" size={20} color={Lumen.colors.muted} />
+                      <Ionicons name="close" size={20} color={Lumen.colors.muted} aria-hidden />
                     </Pressable>
                   </View>
                 ))}
@@ -218,8 +230,10 @@ export default function Circle() {
                       `Pray with me on Holy Bible · AI Assisted. My prayer ID is ${profile?.prayer_id ?? ''}.`,
                     )
                   }
+                  accessibilityRole="button"
+                  accessibilityLabel="Share your prayer ID"
                 >
-                  <Ionicons name="share-outline" size={16} color={Lumen.colors.muted} />
+                  <Ionicons name="share-outline" size={16} color={Lumen.colors.muted} aria-hidden />
                   <Text style={styles.secondaryText}>Share your prayer ID</Text>
                 </Pressable>
               </View>
@@ -253,14 +267,17 @@ export default function Circle() {
                       <Text style={styles.rowMeta}>{invite.personPrayerId}</Text>
                     </View>
                     <Pressable
-                      hitSlop={8}
+                      hitSlop={12}
                       style={styles.iconButton}
                       onPress={async () => {
                         await withdrawInvite(invite.id);
+                        announce('Invitation withdrawn.');
                         await load();
                       }}
+                      accessibilityRole="button"
+                      accessibilityLabel={`Withdraw your invitation to ${invite.personName}`}
                     >
-                      <Ionicons name="close" size={20} color={Lumen.colors.muted} />
+                      <Ionicons name="close" size={20} color={Lumen.colors.muted} aria-hidden />
                     </Pressable>
                   </View>
                 ))}
@@ -297,10 +314,10 @@ function Frame({
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={onBack} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} />
+        <Pressable onPress={onBack} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>Community</Text>
+        <Text style={styles.headerTitle} aria-hidden>Community</Text>
         <View style={{ width: 26 }} />
       </View>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -310,7 +327,7 @@ function Frame({
           keyboardShouldPersistTaps="handled"
           refreshControl={refresh}
         >
-          <Text style={styles.title}>Prayer Circle</Text>
+          <Text style={styles.title} accessibilityRole="header" aria-level={1}>Prayer Circle</Text>
           {children}
           <View style={{ height: 60 }} />
         </ScrollView>
@@ -348,7 +365,7 @@ function FriendRow({
 
   return (
     <View style={[styles.row, !first && styles.divider]}>
-      <View style={styles.avatar}>
+      <View style={styles.avatar} aria-hidden>
         <Text style={styles.avatarLetter}>{friend.displayName.trim().charAt(0).toUpperCase()}</Text>
       </View>
       <View style={{ flex: 1 }}>
@@ -357,16 +374,35 @@ function FriendRow({
       </View>
       {confirming ? (
         <>
-          <Pressable hitSlop={8} style={styles.iconButton} onPress={onLeave}>
+          <Pressable
+            hitSlop={12}
+            style={styles.iconButton}
+            onPress={onLeave}
+            accessibilityRole="button"
+            accessibilityLabel={`Remove ${friend.displayName} from your circle`}
+          >
             <Text style={styles.removeText}>Remove</Text>
           </Pressable>
-          <Pressable hitSlop={8} style={styles.iconButton} onPress={() => setConfirming(false)}>
-            <Ionicons name="close" size={18} color={Lumen.colors.muted} />
+          <Pressable
+            hitSlop={12}
+            style={styles.iconButton}
+            onPress={() => setConfirming(false)}
+            accessibilityRole="button"
+            accessibilityLabel="Keep them in your circle"
+          >
+            <Ionicons name="close" size={18} color={Lumen.colors.muted} aria-hidden />
           </Pressable>
         </>
       ) : (
-        <Pressable hitSlop={8} style={styles.iconButton} onPress={() => setConfirming(true)}>
-          <Ionicons name="ellipsis-horizontal" size={18} color={Lumen.colors.muted} />
+        <Pressable
+          hitSlop={12}
+          style={styles.iconButton}
+          onPress={() => setConfirming(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Options for ${friend.displayName}`}
+          accessibilityHint="Shows the choice to remove them from your circle"
+        >
+          <Ionicons name="ellipsis-horizontal" size={18} color={Lumen.colors.muted} aria-hidden />
         </Pressable>
       )}
     </View>
@@ -382,6 +418,14 @@ function AddFriend({ onDone }: { onDone: () => Promise<void> }) {
   const [said, setSaid] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [lookup, setLookup] = useState<Lookup>({ state: 'idle' });
+
+  useEffect(() => {
+    if (said) announce(said);
+  }, [said]);
+  useEffect(() => {
+    if (lookup.state === 'found') announce(`This prayer ID belongs to ${lookup.name}.`);
+    else if (lookup.state === 'unknown') announce('No one carries that prayer ID.');
+  }, [lookup]);
 
   // Once a whole prayer ID has been typed, say whose it is — so nobody
   // asks a stranger by mistyping one letter.
@@ -437,9 +481,11 @@ function AddFriend({ onDone }: { onDone: () => Promise<void> }) {
           value={code}
           onChangeText={(t) => setCode(t.toUpperCase())}
           placeholder="HB-XXXX-XXXX"
-          placeholderTextColor={'rgba(155,176,208,0.5)'}
+          placeholderTextColor={'rgba(155,176,208,0.8)'}
           autoCapitalize="characters"
           autoCorrect={false}
+          accessibilityLabel="Their prayer ID"
+          accessibilityHint="Starts with H B, then a dash, then eight letters and numbers"
         />
         {lookup.state === 'looking' && <Text style={styles.lookup}>Looking…</Text>}
         {lookup.state === 'found' && <Text style={styles.lookup}>This is {lookup.name}.</Text>}
@@ -455,18 +501,22 @@ function AddFriend({ onDone }: { onDone: () => Promise<void> }) {
           value={note}
           onChangeText={setNote}
           placeholder="Let us keep the novena together."
-          placeholderTextColor={'rgba(155,176,208,0.5)'}
+          placeholderTextColor={'rgba(155,176,208,0.8)'}
+          accessibilityLabel="A word to send with the invitation, optional"
         />
         <Pressable
           style={[styles.primary, (!code.trim() || busy || lookup.state === 'unknown') && { opacity: 0.45 }]}
           disabled={!code.trim() || busy || lookup.state === 'unknown'}
           onPress={send}
+          accessibilityRole="button"
+          accessibilityLabel={lookup.state === 'found' ? `Ask ${lookup.name} to join your circle` : 'Ask them to join your circle'}
+          accessibilityState={{ disabled: !code.trim() || busy || lookup.state === 'unknown' }}
         >
           {busy ? (
             <ActivityIndicator color="#0d1830" />
           ) : (
             <>
-              <Ionicons name="person-add-outline" size={17} color="#0d1830" />
+              <Ionicons name="person-add-outline" size={17} color="#0d1830" aria-hidden />
               <Text style={styles.primaryText}>
                 {lookup.state === 'found' ? `Ask ${lookup.name} to join` : 'Ask them to join'}
               </Text>
@@ -540,20 +590,24 @@ function Intentions({
           value={draft}
           onChangeText={setDraft}
           placeholder="Name what you would have them pray for…"
-          placeholderTextColor={'rgba(155,176,208,0.5)'}
+          placeholderTextColor={'rgba(155,176,208,0.8)'}
           multiline
           maxLength={1000}
+          accessibilityLabel="Your prayer intention for the circle"
         />
         <Pressable
           style={[styles.primary, (!draft.trim() || busy) && { opacity: 0.45 }]}
           disabled={!draft.trim() || busy}
           onPress={post}
+          accessibilityRole="button"
+          accessibilityLabel="Share this intention with your circle"
+          accessibilityState={{ disabled: !draft.trim() || busy }}
         >
           {busy ? (
             <ActivityIndicator color="#0d1830" />
           ) : (
             <>
-              <Ionicons name="flame-outline" size={17} color="#0d1830" />
+              <Ionicons name="flame-outline" size={17} color="#0d1830" aria-hidden />
               <Text style={styles.primaryText}>Share with my circle</Text>
             </>
           )}
@@ -582,11 +636,19 @@ function Intentions({
           )}
 
           <View style={styles.intentionFoot}>
-            <Pressable style={styles.prayButton} onPress={() => togglePrayer(intention)}>
+            <Pressable
+              style={styles.prayButton}
+              onPress={() => togglePrayer(intention)}
+              hitSlop={{ top: 10, bottom: 10 }}
+              accessibilityRole="button"
+              accessibilityLabel={intention.prayedByMe ? 'You prayed for this intention' : 'Mark that you prayed for this intention'}
+              accessibilityState={{ selected: intention.prayedByMe }}
+            >
               <Ionicons
                 name={intention.prayedByMe ? 'flame' : 'flame-outline'}
                 size={17}
                 color={intention.prayedByMe ? Lumen.colors.bright : Lumen.colors.muted}
+                aria-hidden
               />
               <Text style={[styles.prayText, intention.prayedByMe && { color: Lumen.colors.bright }]}>
                 {intention.prayedByMe ? 'You prayed' : 'I prayed for this'}
@@ -600,28 +662,35 @@ function Intentions({
             {intention.mine && (
               <>
                 <Pressable
-                  hitSlop={8}
+                  hitSlop={12}
                   style={styles.iconButton}
                   onPress={async () => {
                     await markAnswered(intention.id, !intention.answered);
+                    announce(intention.answered ? 'Marked as still carried.' : 'Marked answered. Thanks be to God.');
                     await reload();
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={intention.answered ? 'Mark this intention as still carried' : 'Mark this intention answered'}
                 >
                   <Ionicons
                     name={intention.answered ? 'refresh-outline' : 'checkmark-done-outline'}
                     size={18}
                     color={Lumen.colors.accent}
+                    aria-hidden
                   />
                 </Pressable>
                 <Pressable
-                  hitSlop={8}
+                  hitSlop={12}
                   style={styles.iconButton}
                   onPress={async () => {
                     await removeIntention(intention.id);
+                    announce('Intention removed.');
                     await reload();
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Remove this intention"
                 >
-                  <Ionicons name="trash-outline" size={17} color={Lumen.colors.muted} />
+                  <Ionicons name="trash-outline" size={17} color={Lumen.colors.muted} aria-hidden />
                 </Pressable>
               </>
             )}
@@ -672,9 +741,9 @@ const styles = StyleSheet.create({
   fieldLabel: { fontFamily: Lumen.fonts.label, fontSize: 10, letterSpacing: 1, textTransform: 'uppercase', color: Lumen.colors.accent, marginBottom: 6 },
   input: { fontFamily: Lumen.fonts.body, fontSize: 15, color: Lumen.colors.text, borderWidth: 1, borderColor: Lumen.colors.cardBorder, borderRadius: Lumen.radius.md, paddingHorizontal: 12, paddingVertical: 10, backgroundColor: 'rgba(255,255,255,0.03)' },
   codeInput: { fontFamily: Lumen.fonts.label, letterSpacing: 2, textAlign: 'center', fontSize: 17 },
-  primary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent, marginTop: 14 },
+  primary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent, marginTop: 14 },
   primaryText: { fontFamily: Lumen.fonts.bodyBold, color: '#0d1830', fontSize: 15 },
-  secondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 44, paddingHorizontal: 18, borderRadius: 22, borderWidth: 1, borderColor: Lumen.colors.cardBorder, marginTop: 6 },
+  secondary: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 44, paddingHorizontal: 18, borderRadius: 22, borderWidth: 1, borderColor: Lumen.colors.cardBorder, marginTop: 6 },
   secondaryText: { fontFamily: Lumen.fonts.bodyBold, color: Lumen.colors.muted, fontSize: 14 },
   note: { fontFamily: Lumen.fonts.body, fontSize: 13, lineHeight: 19, color: Lumen.colors.accent2, marginTop: 12 },
   lookup: { fontFamily: Lumen.fonts.body, fontSize: 13, lineHeight: 19, color: Lumen.colors.accent2, marginTop: 8, textAlign: 'center' },

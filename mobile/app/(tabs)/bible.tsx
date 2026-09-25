@@ -13,11 +13,13 @@ import { BIBLE_MANIFEST } from '@/data/bibles/manifest';
 import { useVersion } from '@/state/VersionContext';
 import { useSettings } from '@/state/SettingsContext';
 import { loadChapter, chapterCount, hasBook, ChapterResult } from '@/lib/bibleApi';
+import { announce, useReducedMotion } from '@/lib/a11y';
 
 export default function BibleReader() {
   const router = useRouter();
   const { versionId, version, setVersion } = useVersion();
   const { textScale } = useSettings();
+  const reducedMotion = useReducedMotion();
   const verseSize = { fontSize: (Lumen.type.scripture + 3) * textScale, lineHeight: 34 * textScale };
   const dropCapSize = { fontSize: 58 * textScale, lineHeight: 54 * textScale };
   const [book, setBook] = useState('John');
@@ -40,10 +42,13 @@ export default function BibleReader() {
     setError(null);
     setSelected(null);
     try {
-      setData(await loadChapter(v, b, c));
+      const res = await loadChapter(v, b, c);
+      setData(res);
+      announce(`${b} chapter ${c} loaded. ${res.verses.length} verses.`);
     } catch (e: any) {
       setError(e.message ?? 'Something went wrong.');
       setData(null);
+      announce('The chapter could not be loaded.');
     } finally {
       setLoading(false);
     }
@@ -81,9 +86,10 @@ export default function BibleReader() {
   };
 
   const playChapter = () => {
-    if (speaking) { Speech.stop(); setSpeaking(false); return; }
+    if (speaking) { Speech.stop(); setSpeaking(false); announce('Reading stopped.'); return; }
     if (!data) return;
     setSpeaking(true);
+    announce('Reading the chapter aloud.');
     Speech.speak(data.verses.map((v) => v.text).join(' '), {
       rate: 0.9,
       onDone: () => setSpeaking(false),
@@ -119,13 +125,25 @@ export default function BibleReader() {
     <Screen>
       {/* Reference + version bar */}
       <View style={styles.topBar}>
-        <Pressable style={styles.refBtn} onPress={() => setPickerOpen(true)}>
+        <Pressable
+          style={styles.refBtn}
+          onPress={() => setPickerOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`${book}, chapter ${chapter}`}
+          accessibilityHint="Choose a different book and chapter"
+        >
           <Text style={styles.refText}>{book} {chapter}</Text>
-          <Ionicons name="chevron-down" size={18} color={Lumen.colors.accent} />
+          <Ionicons name="chevron-down" size={18} color={Lumen.colors.accent} aria-hidden />
         </Pressable>
-        <Pressable style={styles.versionBtn} onPress={() => setVersionOpen(true)}>
+        <Pressable
+          style={styles.versionBtn}
+          onPress={() => setVersionOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel={`Bible version: ${version.name}`}
+          accessibilityHint="Change the Bible version"
+        >
           <Text style={styles.versionText}>{version.abbrev}</Text>
-          <Ionicons name="swap-horizontal" size={15} color={Lumen.colors.accent} />
+          <Ionicons name="swap-horizontal" size={15} color={Lumen.colors.accent} aria-hidden />
         </Pressable>
       </View>
 
@@ -143,14 +161,26 @@ export default function BibleReader() {
 
       {data && !loading && (
         <ScrollView contentContainerStyle={styles.reader} showsVerticalScrollIndicator={false}>
-          <Text style={styles.chapterHeading}>Chapter {chapter}</Text>
+          <Text style={styles.chapterHeading} accessibilityRole="header" aria-level={1}>Chapter {chapter}</Text>
           <Text>
             {data.verses.map((v, i) => {
               const hl = highlights.has(v.verse);
               const isFirst = i === 0;
               const t = v.text.trimStart();
               return (
-                <Text key={v.verse} onPress={() => setSelected(selected === v.verse ? null : v.verse)} style={hl ? styles.highlighted : undefined}>
+                <Text
+                  key={v.verse}
+                  onPress={() => {
+                    const opening = selected !== v.verse;
+                    setSelected(opening ? v.verse : null);
+                    if (opening) announce(`Verse ${v.verse} selected. Actions are below the text.`);
+                  }}
+                  style={hl ? styles.highlighted : undefined}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Verse ${v.verse}. ${v.text.trim()}${hl ? '. Highlighted' : ''}`}
+                  accessibilityHint="Opens highlight, explain, listen and share for this verse"
+                  accessibilityState={{ selected: selected === v.verse }}
+                >
                   {isFirst ? (
                     <Text>
                       <Text style={[styles.dropCap, dropCapSize]}><Text style={styles.dropCapNum}>{v.verse}</Text>{t.charAt(0)}</Text>
@@ -171,8 +201,13 @@ export default function BibleReader() {
       )}
 
       {data && !loading && selected == null && (
-        <Pressable style={styles.player} onPress={playChapter}>
-          <Ionicons name={speaking ? 'stop-circle' : 'play-circle'} size={26} color="#0d1830" />
+        <Pressable
+          style={styles.player}
+          onPress={playChapter}
+          accessibilityRole="button"
+          accessibilityLabel={speaking ? 'Stop reading aloud' : 'Read this chapter aloud'}
+        >
+          <Ionicons name={speaking ? 'stop-circle' : 'play-circle'} size={26} color="#0d1830" aria-hidden />
           <Text style={styles.playerText}>{speaking ? 'Stop' : 'Read this chapter aloud'}</Text>
         </Pressable>
       )}
@@ -181,27 +216,33 @@ export default function BibleReader() {
         <View style={styles.toolbar}>
           <Text style={styles.toolbarRef}>{book} {chapter}:{selected} · {version.abbrev}</Text>
           <View style={styles.toolbarActions}>
-            <ToolBtn icon={highlights.has(selected!) ? 'bookmark' : 'bookmark-outline'} label="Highlight" onPress={onHighlight} />
-            <ToolBtn icon="sparkles-outline" label="Explain" onPress={onExplain} />
-            <ToolBtn icon="volume-medium-outline" label="Listen" onPress={onListenVerse} />
-            <ToolBtn icon="share-outline" label="Share" onPress={onShare} />
+            <ToolBtn
+              icon={highlights.has(selected!) ? 'bookmark' : 'bookmark-outline'}
+              label="Highlight"
+              a11yLabel={highlights.has(selected!) ? `Remove the highlight from verse ${selected}` : `Highlight verse ${selected}`}
+              onPress={onHighlight}
+            />
+            <ToolBtn icon="sparkles-outline" label="Explain" a11yLabel={`Ask the guide to explain verse ${selected}`} onPress={onExplain} />
+            <ToolBtn icon="volume-medium-outline" label="Listen" a11yLabel={`Read verse ${selected} aloud`} onPress={onListenVerse} />
+            <ToolBtn icon="share-outline" label="Share" a11yLabel={`Share verse ${selected}`} onPress={onShare} />
           </View>
         </View>
       )}
 
       {!selectedVerse && (
         <View style={styles.nav}>
-          <NavBtn icon="play-back" label="Book" disabled={bookIndex <= 0} onPress={() => goBook(-1)} />
-          <NavBtn icon="chevron-back" label="Prev" disabled={chapter <= 1} onPress={() => goChapter(-1)} />
-          <Text style={styles.navCenter}>{chapter} / {chapters}</Text>
-          <NavBtn icon="chevron-forward" label="Next" right disabled={chapter >= chapters} onPress={() => goChapter(1)} />
-          <NavBtn icon="play-forward" label="Book" right disabled={bookIndex >= bookList.length - 1} onPress={() => goBook(1)} />
+          <NavBtn icon="play-back" label="Book" a11yLabel="Previous book" disabled={bookIndex <= 0} onPress={() => goBook(-1)} />
+          <NavBtn icon="chevron-back" label="Prev" a11yLabel="Previous chapter" disabled={chapter <= 1} onPress={() => goChapter(-1)} />
+          <Text style={styles.navCenter} accessibilityLabel={`Chapter ${chapter} of ${chapters}`}>{chapter} / {chapters}</Text>
+          <NavBtn icon="chevron-forward" label="Next" a11yLabel="Next chapter" right disabled={chapter >= chapters} onPress={() => goChapter(1)} />
+          <NavBtn icon="play-forward" label="Book" a11yLabel="Next book" right disabled={bookIndex >= bookList.length - 1} onPress={() => goBook(1)} />
         </View>
       )}
 
       <BookPicker
         open={pickerOpen}
         versionId={versionId}
+        reducedMotion={reducedMotion}
         onClose={() => setPickerOpen(false)}
         onChoose={(b, c, forceVersion) => {
           if (forceVersion && forceVersion !== versionId) setVersion(forceVersion);
@@ -213,60 +254,79 @@ export default function BibleReader() {
       <VersionPicker
         open={versionOpen}
         currentId={versionId}
+        reducedMotion={reducedMotion}
         onClose={() => setVersionOpen(false)}
         onChoose={(id) => {
           setVersion(id);
           setVersionOpen(false);
+          announce(`Version changed to ${findVersion(id).name}.`);
         }}
       />
     </Screen>
   );
 }
 
-function ToolBtn({ icon, label, onPress }: { icon: any; label: string; onPress: () => void }) {
+function ToolBtn({ icon, label, a11yLabel, onPress }: { icon: any; label: string; a11yLabel: string; onPress: () => void }) {
   return (
-    <Pressable style={styles.toolBtn} onPress={onPress} hitSlop={8}>
-      <Ionicons name={icon} size={22} color={Lumen.colors.accent} />
+    <Pressable style={styles.toolBtn} onPress={onPress} hitSlop={8} accessibilityRole="button" accessibilityLabel={a11yLabel}>
+      <Ionicons name={icon} size={22} color={Lumen.colors.accent} aria-hidden />
       <Text style={styles.toolLabel}>{label}</Text>
     </Pressable>
   );
 }
-function NavBtn({ icon, label, onPress, disabled, right }: { icon: any; label: string; onPress: () => void; disabled?: boolean; right?: boolean }) {
+function NavBtn({ icon, label, a11yLabel, onPress, disabled, right }: { icon: any; label: string; a11yLabel: string; onPress: () => void; disabled?: boolean; right?: boolean }) {
   const color = disabled ? 'rgba(155,176,208,0.35)' : Lumen.colors.text;
   return (
-    <Pressable style={styles.navBtn} disabled={disabled} onPress={onPress}>
-      {!right && <Ionicons name={icon} size={18} color={color} />}
+    <Pressable
+      style={styles.navBtn}
+      disabled={disabled}
+      onPress={onPress}
+      hitSlop={{ top: 10, bottom: 10 }}
+      accessibilityRole="button"
+      accessibilityLabel={a11yLabel}
+      accessibilityState={{ disabled: !!disabled }}
+    >
+      {!right && <Ionicons name={icon} size={18} color={color} aria-hidden />}
       <Text style={[styles.navText, { color }]}>{label}</Text>
-      {right && <Ionicons name={icon} size={18} color={color} />}
+      {right && <Ionicons name={icon} size={18} color={color} aria-hidden />}
     </Pressable>
   );
 }
 
 // ── Version picker ───────────────────────────────────────────────
-function VersionPicker({ open, currentId, onClose, onChoose }: { open: boolean; currentId: string; onClose: () => void; onChoose: (id: string) => void }) {
+function VersionPicker({ open, currentId, reducedMotion, onClose, onChoose }: { open: boolean; currentId: string; reducedMotion?: boolean; onClose: () => void; onChoose: (id: string) => void }) {
   return (
-    <Modal visible={open} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={open} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
       <View style={styles.sheetBackdrop}>
-        <View style={styles.sheet}>
-          <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>Choose a version</Text>
+        <View style={styles.sheet} accessibilityViewIsModal aria-modal>
+          <View style={styles.sheetHandle} aria-hidden />
+          <Text style={styles.sheetTitle} accessibilityRole="header" aria-level={1}>Choose a version</Text>
           <Text style={styles.sheetSub}>All bundled · fully offline · public domain</Text>
           <ScrollView>
             {VERSIONS.map((v) => {
               const active = v.id === currentId;
               return (
-                <Pressable key={v.id} style={[styles.versionRow, active && styles.versionRowActive]} onPress={() => onChoose(v.id)}>
-                  <View style={styles.versionBadge}><Text style={styles.versionBadgeText}>{v.abbrev}</Text></View>
+                <Pressable
+                  key={v.id}
+                  style={[styles.versionRow, active && styles.versionRowActive]}
+                  onPress={() => onChoose(v.id)}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${v.name}, ${v.year}. ${v.blurb}`}
+                  accessibilityState={{ selected: active }}
+                >
+                  <View style={styles.versionBadge} aria-hidden><Text style={styles.versionBadgeText}>{v.abbrev}</Text></View>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.versionName}>{v.name}</Text>
                     <Text style={styles.versionBlurb}>{v.year} · {v.blurb}</Text>
                   </View>
-                  {active && <Ionicons name="checkmark-circle" size={22} color={Lumen.colors.accent} />}
+                  {active && <Ionicons name="checkmark-circle" size={22} color={Lumen.colors.accent} aria-hidden />}
                 </Pressable>
               );
             })}
           </ScrollView>
-          <Pressable style={styles.sheetClose} onPress={onClose}><Text style={styles.sheetCloseText}>Close</Text></Pressable>
+          <Pressable style={styles.sheetClose} onPress={onClose} accessibilityRole="button" accessibilityLabel="Close the version chooser">
+            <Text style={styles.sheetCloseText}>Close</Text>
+          </Pressable>
         </View>
       </View>
     </Modal>
@@ -277,8 +337,8 @@ function VersionPicker({ open, currentId, onClose, onChoose }: { open: boolean; 
 type Tab = 'ot' | 'nt' | 'deutero';
 
 function BookPicker({
-  open, versionId, onClose, onChoose,
-}: { open: boolean; versionId: string; onClose: () => void; onChoose: (b: string, chapter: number, forceVersion?: string) => void }) {
+  open, versionId, reducedMotion, onClose, onChoose,
+}: { open: boolean; versionId: string; reducedMotion?: boolean; onClose: () => void; onChoose: (b: string, chapter: number, forceVersion?: string) => void }) {
   const [tab, setTab] = useState<Tab>('ot');
   const [query, setQuery] = useState('');
   const [chapterFor, setChapterFor] = useState<{ book: string; chapters: number; forceVersion?: string } | null>(null);
@@ -290,19 +350,30 @@ function BookPicker({
     setChapterFor({ book, chapters: count, forceVersion });
 
   return (
-    <Modal visible={open} animationType="slide" transparent onRequestClose={onClose}>
-      <View style={styles.pickerRoot}>
+    <Modal visible={open} animationType={reducedMotion ? 'none' : 'slide'} transparent onRequestClose={onClose}>
+      <View style={styles.pickerRoot} accessibilityViewIsModal aria-modal>
         <View style={styles.pickerHeader}>
-          <Text style={styles.pickerTitle}>{chapterFor ? `${chapterFor.book} — chapter` : 'Choose a book'}</Text>
-          <Pressable onPress={chapterFor ? () => setChapterFor(null) : onClose} hitSlop={12}>
-            <Ionicons name={chapterFor ? 'arrow-back' : 'close'} size={26} color={Lumen.colors.text} />
+          <Text style={styles.pickerTitle} accessibilityRole="header" aria-level={1}>{chapterFor ? `${chapterFor.book} — chapter` : 'Choose a book'}</Text>
+          <Pressable
+            onPress={chapterFor ? () => setChapterFor(null) : onClose}
+            hitSlop={12}
+            accessibilityRole="button"
+            accessibilityLabel={chapterFor ? 'Back to the list of books' : 'Close the book chooser'}
+          >
+            <Ionicons name={chapterFor ? 'arrow-back' : 'close'} size={26} color={Lumen.colors.text} aria-hidden />
           </Pressable>
         </View>
 
         {chapterFor ? (
           <ScrollView contentContainerStyle={styles.chapterGrid}>
             {Array.from({ length: chapterFor.chapters }, (_, i) => i + 1).map((c) => (
-              <Pressable key={c} style={styles.chapterCell} onPress={() => onChoose(chapterFor.book, c, chapterFor.forceVersion)}>
+              <Pressable
+                key={c}
+                style={styles.chapterCell}
+                onPress={() => onChoose(chapterFor.book, c, chapterFor.forceVersion)}
+                accessibilityRole="button"
+                accessibilityLabel={`Chapter ${c}`}
+              >
                 <Text style={styles.chapterNum}>{c}</Text>
               </Pressable>
             ))}
@@ -310,8 +381,16 @@ function BookPicker({
         ) : (
           <>
             <View style={styles.searchWrap}>
-              <Ionicons name="search" size={16} color={Lumen.colors.muted} />
-              <TextInput style={styles.search} placeholder="Search books — try “rev”" placeholderTextColor={Lumen.colors.muted} value={query} onChangeText={setQuery} autoCorrect={false} />
+              <Ionicons name="search" size={16} color={Lumen.colors.muted} aria-hidden />
+              <TextInput
+                style={styles.search}
+                placeholder="Search books — try “rev”"
+                placeholderTextColor={Lumen.colors.muted}
+                value={query}
+                onChangeText={setQuery}
+                autoCorrect={false}
+                accessibilityLabel="Search the books of the Bible"
+              />
             </View>
 
             {matches ? (
@@ -325,7 +404,14 @@ function BookPicker({
               <>
                 <View style={styles.tabs}>
                   {([['ot', 'Old Testament'], ['nt', 'New Testament'], ['deutero', 'Deuterocanon']] as const).map(([k, lbl]) => (
-                    <Pressable key={k} style={[styles.tab, tab === k && styles.tabActive]} onPress={() => setTab(k)}>
+                    <Pressable
+                      key={k}
+                      style={[styles.tab, tab === k && styles.tabActive]}
+                      onPress={() => setTab(k)}
+                      accessibilityRole="button"
+                      accessibilityLabel={lbl}
+                      accessibilityState={{ selected: tab === k }}
+                    >
                       <Text style={[styles.tabText, tab === k && styles.tabTextActive]}>{lbl}</Text>
                     </Pressable>
                   ))}
@@ -370,12 +456,17 @@ function BookPicker({
 
 function BookRow({ name, meta, onPress }: { name: string; meta: string; onPress: () => void }) {
   return (
-    <Pressable style={styles.bookRow} onPress={onPress}>
+    <Pressable
+      style={styles.bookRow}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${name}, ${meta}`}
+    >
       <View style={{ flex: 1 }}>
         <Text style={styles.bookName}>{name}</Text>
         <Text style={styles.bookMeta}>{meta}</Text>
       </View>
-      <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
+      <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} aria-hidden />
     </Pressable>
   );
 }

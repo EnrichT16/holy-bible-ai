@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Lumen } from '@/theme/lumen';
 import { Screen, Card, Label } from '@/components/ui';
 import { insertRow } from '@/lib/supabase';
+import { announce } from '@/lib/a11y';
 
 /**
  * Submit your book — the review queue is open. A submission enters the
@@ -21,6 +22,10 @@ export default function SubmitBook() {
   const [busy, setBusy] = useState(false);
   const [sent, setSent] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    if (sent) announce(sent);
+  }, [sent]);
 
   const RIGHTS = ['I am the author', 'Public domain', 'I hold permission'];
   const canSubmit = !busy && title.trim() && author.trim() && rights && contact.trim();
@@ -50,15 +55,15 @@ export default function SubmitBook() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} />
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>The Library</Text>
+        <Text style={styles.headerTitle} aria-hidden>The Library</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>Submit your book</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={1}>Submit your book</Text>
         <Text style={styles.subtitle}>
           The Library grows by gift — books offered by their authors, reviewed together,
           and published free. Never a paywall on the books that lead to the Word.
@@ -79,7 +84,14 @@ export default function SubmitBook() {
           <Text style={styles.fieldLabel}>Rights</Text>
           <View style={styles.chips}>
             {RIGHTS.map((r) => (
-              <Pressable key={r} style={[styles.chip, rights === r && styles.chipActive]} onPress={() => setRights(r)}>
+              <Pressable
+                key={r}
+                style={[styles.chip, rights === r && styles.chipActive]}
+                onPress={() => setRights(r)}
+                accessibilityRole="button"
+                accessibilityLabel={`Rights: ${r}`}
+                accessibilityState={{ selected: rights === r }}
+              >
                 <Text style={[styles.chipText, rights === r && styles.chipTextActive]}>{r}</Text>
               </Pressable>
             ))}
@@ -89,12 +101,19 @@ export default function SubmitBook() {
           <Field label="About the book (optional)" value={about} onChange={setAbout} placeholder="A few lines on what it is and who it serves" multiline />
           <Field label="Contact (email)" value={contact} onChange={setContact} placeholder="you@example.org" />
 
-          <Pressable style={[styles.submit, !canSubmit && { opacity: 0.45 }]} disabled={!canSubmit} onPress={submit}>
+          <Pressable
+            style={[styles.submit, !canSubmit && { opacity: 0.45 }]}
+            disabled={!canSubmit}
+            onPress={submit}
+            accessibilityRole="button"
+            accessibilityLabel="Submit your book for review"
+            accessibilityState={{ disabled: !canSubmit }}
+          >
             {busy ? (
               <ActivityIndicator color="#0d1830" />
             ) : (
               <>
-                <Ionicons name="cloud-upload-outline" size={17} color="#0d1830" />
+                <Ionicons name="cloud-upload-outline" size={17} color="#0d1830" aria-hidden />
                 <Text style={styles.submitText}>Submit for review</Text>
               </>
             )}
@@ -133,8 +152,9 @@ function Field({
         value={value}
         onChangeText={onChange}
         placeholder={placeholder}
-        placeholderTextColor={'rgba(155,176,208,0.5)'}
+        placeholderTextColor={'rgba(155,176,208,0.8)'}
         multiline={multiline}
+        accessibilityLabel={label}
       />
     </View>
   );
@@ -156,7 +176,7 @@ const styles = StyleSheet.create({
   chipActive: { backgroundColor: Lumen.colors.accent, borderColor: Lumen.colors.accent },
   chipText: { fontFamily: Lumen.fonts.bodyBold, fontSize: 12.5, color: Lumen.colors.muted },
   chipTextActive: { color: '#0d1830' },
-  submit: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, height: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent, marginTop: 4 },
+  submit: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent, marginTop: 4 },
   submitText: { fontFamily: Lumen.fonts.bodyBold, color: '#0d1830', fontSize: 15 },
   sent: { fontFamily: Lumen.fonts.body, fontSize: 13, lineHeight: 19, color: Lumen.colors.accent2, marginTop: 12 },
   footnote: { fontFamily: Lumen.fonts.body, fontSize: 12.5, lineHeight: 19, color: Lumen.colors.muted, fontStyle: 'italic', marginTop: 16 },

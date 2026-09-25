@@ -29,15 +29,15 @@ export default function CatholicDay() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} />
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>The Day</Text>
+        <Text style={styles.headerTitle} aria-hidden>The Day</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <Text style={styles.date}>{lit.dateLabel}</Text>
+        <Text style={styles.date} accessibilityRole="header" aria-level={1}>{lit.dateLabel}</Text>
 
         <Card style={{ marginTop: 16 }}>
           <View style={styles.row}>
@@ -45,8 +45,8 @@ export default function CatholicDay() {
               <Label>Season</Label>
               <Text style={styles.big}>{lit.season}</Text>
             </View>
-            <View style={styles.swatchWrap}>
-              <View style={[styles.swatch, { backgroundColor: COLOR_SWATCH[lit.color] ?? Lumen.colors.accent }]} />
+            <View style={styles.swatchWrap} accessible accessibilityLabel={`Liturgical colour: ${lit.color}`}>
+              <View style={[styles.swatch, { backgroundColor: COLOR_SWATCH[lit.color] ?? Lumen.colors.accent }]} aria-hidden />
               <Text style={styles.swatchLabel}>{lit.color}</Text>
             </View>
           </View>
@@ -82,12 +82,12 @@ export default function CatholicDay() {
           ))}
         </Card>
 
-        <Pressable style={styles.cta} onPress={() => router.push('/rosary')}>
-          <Ionicons name="flower-outline" size={18} color="#0d1830" />
+        <Pressable style={styles.cta} onPress={() => router.push('/rosary')} accessibilityRole="button" accessibilityLabel="Pray today's Rosary">
+          <Ionicons name="flower-outline" size={18} color="#0d1830" aria-hidden />
           <Text style={styles.ctaText}>Pray today's Rosary</Text>
         </Pressable>
-        <Pressable style={styles.ctaGhost} onPress={() => router.push('/chaplet')}>
-          <Ionicons name="water-outline" size={18} color={Lumen.colors.accent} />
+        <Pressable style={styles.ctaGhost} onPress={() => router.push('/chaplet')} accessibilityRole="button" accessibilityLabel="Pray the Divine Mercy Chaplet">
+          <Ionicons name="water-outline" size={18} color={Lumen.colors.accent} aria-hidden />
           <Text style={styles.ctaGhostText}>The Divine Mercy Chaplet</Text>
         </Pressable>
 
@@ -113,8 +113,8 @@ const styles = StyleSheet.create({
   mysteryDivider: { borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)' },
   mysteryNum: { fontFamily: Lumen.fonts.displaySemi, fontSize: 18, color: Lumen.colors.accent, width: 18, textAlign: 'center' },
   mysteryName: { fontFamily: Lumen.fonts.display, fontSize: 18, color: Lumen.colors.text, flex: 1 },
-  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 22, height: 50, borderRadius: 25, backgroundColor: Lumen.colors.accent },
+  cta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 22, minHeight: 50, borderRadius: 25, backgroundColor: Lumen.colors.accent },
   ctaText: { fontFamily: Lumen.fonts.bodyBold, color: '#0d1830', fontSize: 15 },
-  ctaGhost: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10, height: 50, borderRadius: 25, borderWidth: 1, borderColor: Lumen.colors.cardBorder, backgroundColor: Lumen.colors.card },
+  ctaGhost: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginTop: 10, minHeight: 50, borderRadius: 25, borderWidth: 1, borderColor: Lumen.colors.cardBorder, backgroundColor: Lumen.colors.card },
   ctaGhostText: { fontFamily: Lumen.fonts.bodyBold, color: Lumen.colors.accent, fontSize: 15 },
 });

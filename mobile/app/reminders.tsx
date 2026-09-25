@@ -66,15 +66,15 @@ export default function Reminders() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} />
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>Community</Text>
+        <Text style={styles.headerTitle} aria-hidden>Community</Text>
         <View style={{ width: 26 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Reminders</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={1}>Reminders</Text>
         <Text style={styles.subtitle}>
           The Church has always prayed by the clock. Choose your hours; your phone will
           call you to them each day. Everything stays on your device.
@@ -104,7 +104,7 @@ export default function Reminders() {
         <Label style={{ marginTop: 24, marginBottom: 10 }}>The hours</Label>
         {PRESETS.map((p) => (
           <Card key={p.id} style={styles.row}>
-            <Ionicons name={p.icon as any} size={22} color={Lumen.colors.accent} />
+            <Ionicons name={p.icon as any} size={22} color={Lumen.colors.accent} aria-hidden />
             <View style={{ flex: 1 }}>
               <Text style={styles.rowTitle}>{p.title} · {p.time}</Text>
               <Text style={styles.rowSub}>{p.sub}</Text>
@@ -113,6 +113,7 @@ export default function Reminders() {
               value={!!scheduled[p.id]}
               onValueChange={(v) => toggle(p, v)}
               disabled={!NOTIFY_SUPPORTED}
+              accessibilityLabel={`${p.title} reminder at ${p.time}. ${p.sub}`}
               trackColor={{ true: Lumen.colors.accent, false: 'rgba(155,176,208,0.3)' }}
               thumbColor={Platform.OS === 'android' ? '#f1e8d2' : undefined}
             />

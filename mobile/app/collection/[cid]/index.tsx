@@ -22,26 +22,31 @@ export default function Collection() {
   return (
     <Screen edges={['top', 'bottom']}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} />
+        <Pressable onPress={() => router.back()} hitSlop={12} accessibilityRole="button" accessibilityLabel="Go back">
+          <Ionicons name="chevron-back" size={26} color={Lumen.colors.text} aria-hidden />
         </Pressable>
-        <Text style={styles.headerTitle}>The Library</Text>
+        <Text style={styles.headerTitle} aria-hidden>The Library</Text>
         <View style={{ width: 26 }} />
       </View>
       <ScrollView contentContainerStyle={styles.body} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{collection.title}</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={1}>{collection.title}</Text>
         <Text style={styles.subtitle}>{collection.intro}</Text>
 
         <View style={{ marginTop: 18 }}>
           {collection.entries.map((e) => (
-            <Pressable key={e.id} onPress={() => router.push(`/collection/${collection.id}/${e.id}` as any)}>
+            <Pressable
+              key={e.id}
+              onPress={() => router.push(`/collection/${collection.id}/${e.id}` as any)}
+              accessibilityRole="button"
+              accessibilityLabel={`${e.title}. ${e.meta}`}
+            >
               <Card style={styles.row}>
-                <Ionicons name={collection.icon as any} size={20} color={Lumen.colors.accent} />
+                <Ionicons name={collection.icon as any} size={20} color={Lumen.colors.accent} aria-hidden />
                 <View style={{ flex: 1 }}>
                   <Text style={styles.rowTitle}>{e.title}</Text>
                   <Text style={styles.rowSub}>{e.meta}</Text>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} />
+                <Ionicons name="chevron-forward" size={18} color={Lumen.colors.muted} aria-hidden />
               </Card>
             </Pressable>
           ))}

@@ -15,7 +15,7 @@ export default function More() {
   return (
     <Screen>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>More</Text>
+        <Text style={styles.title} accessibilityRole="header" aria-level={1}>More</Text>
 
         <Label style={styles.sectionLabel}>Pray</Label>
         <Item icon="flower-outline" title="The Rosary" sub="Guided, illuminated bead by bead" onPress={() => router.push('/rosary')} live />
@@ -56,8 +56,11 @@ function Item({ icon, title, sub, onPress, live }: { icon: any; title: string; s
       style={({ pressed }) => [styles.item, pressed && live && { opacity: 0.7 }]}
       onPress={onPress}
       disabled={!live}
+      accessibilityRole="button"
+      accessibilityLabel={live ? `${title}. ${sub}` : `${title}. ${sub}. Coming next`}
+      accessibilityState={{ disabled: !live }}
     >
-      <View style={[styles.itemIcon, { borderColor: live ? Lumen.colors.accent + '66' : Lumen.colors.cardBorder }]}>
+      <View style={[styles.itemIcon, { borderColor: live ? Lumen.colors.accent + '66' : Lumen.colors.cardBorder }]} aria-hidden>
         <Ionicons name={icon} size={20} color={live ? Lumen.colors.accent : Lumen.colors.muted} />
       </View>
       <View style={{ flex: 1 }}>
@@ -65,7 +68,7 @@ function Item({ icon, title, sub, onPress, live }: { icon: any; title: string; s
         <Text style={styles.itemSub}>{sub}</Text>
       </View>
       {live ? (
-        <Ionicons name="chevron-forward" size={20} color={Lumen.colors.muted} />
+        <Ionicons name="chevron-forward" size={20} color={Lumen.colors.muted} aria-hidden />
       ) : (
         <Text style={styles.coming}>Next</Text>
       )}
