@@ -16,6 +16,7 @@ import { ThemeProvider } from '@/theme/ThemeContext';
 import { VersionProvider } from '@/state/VersionContext';
 import { SettingsProvider } from '@/state/SettingsContext';
 import { AccountProvider } from '@/state/AccountContext';
+import { CallProvider } from '@/state/CallContext';
 import { useReducedMotion } from '@/lib/a11y';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -47,6 +48,7 @@ export default function RootLayout() {
       <ThemeProvider>
         <SettingsProvider>
         <AccountProvider>
+        <CallProvider>
         <VersionProvider>
           <StatusBar style="light" />
           <Stack
@@ -62,6 +64,7 @@ export default function RootLayout() {
             <Stack.Screen name="give" options={{ presentation: 'card' }} />
           </Stack>
         </VersionProvider>
+        </CallProvider>
         </AccountProvider>
         </SettingsProvider>
       </ThemeProvider>

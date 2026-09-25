@@ -14,6 +14,7 @@ import { authDelete, authInsert, authSelect, authUpdate, rpc } from '@/lib/supab
 interface JoinedProfile {
   display_name: string;
   prayer_id?: string;
+  last_seen_at?: string | null;
 }
 
 export interface CircleFriend {
@@ -21,6 +22,8 @@ export interface CircleFriend {
   displayName: string;
   prayerId: string;
   since: string;
+  /** When their app last spoke up — null until the Slice 2 schema runs. */
+  lastSeenAt: string | null;
 }
 
 export interface Invite {
@@ -64,15 +67,26 @@ interface MemberRow {
 }
 
 export async function fetchCircle(): Promise<CircleFriend[]> {
-  const rows = await authSelect<MemberRow>(
-    'circle_members',
-    'select=friend_id,created_at,profiles!circle_members_friend_id_fkey(display_name,prayer_id)&order=created_at.asc',
-  );
+  // Ask for presence too; a database that pre-dates Slice 2 has no
+  // last_seen_at column yet, so fall back rather than break the circle.
+  let rows: MemberRow[];
+  try {
+    rows = await authSelect<MemberRow>(
+      'circle_members',
+      'select=friend_id,created_at,profiles!circle_members_friend_id_fkey(display_name,prayer_id,last_seen_at)&order=created_at.asc',
+    );
+  } catch {
+    rows = await authSelect<MemberRow>(
+      'circle_members',
+      'select=friend_id,created_at,profiles!circle_members_friend_id_fkey(display_name,prayer_id)&order=created_at.asc',
+    );
+  }
   return rows.map((r) => ({
     id: r.friend_id,
     displayName: r.profiles?.display_name ?? 'A friend in Christ',
     prayerId: r.profiles?.prayer_id ?? '',
     since: r.created_at,
+    lastSeenAt: r.profiles?.last_seen_at ?? null,
   }));
 }
 

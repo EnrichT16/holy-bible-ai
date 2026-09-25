@@ -63,11 +63,16 @@ Built in slices, because calling needs someone to call before it needs a microph
   the membership of the app, a stranger is reachable only by the exact prayer ID they gave
   you, and intentions never leave the circle
 
-### Slice 2 — the calls  ← **NEXT**
-- In-app voice calls (WebRTC), QR invites, one-to-one and groups of four,
-  *read the Word together*, real ringing + missed calls
-- Free tier on self-hosted open-source calling (LiveKit / Jitsi); paid **unlimited**
-  tier via a provider (Twilio / Agora), funded by the subscription
+### ✔ Slice 2 — the calls  (BUILT — awaiting the LiveKit keys)
+- [x] **Voice calls over LiveKit** — one-to-one and groups of four, from the Prayer
+  Circle, in the web app; the backend mints short-lived room tokens and holds the
+  only secret (`backend/DEPLOY.md` → "Waking the voice calls")
+- [x] **Ringing, answering, declining, missed calls** — carried by the database with
+  Row Level Security; the app rings with a full-screen, screen-reader-spoken invitation
+  while it is open
+- [x] **Presence** — friends show as *Reachable now* while their app is open
+- [ ] **The true ring on a locked phone** — needs the store apps → Phase 4
+- [ ] QR invites (prayer IDs already share by text); *read the Word together* in-call
 
 ### Slice 3 — the subscription
 - 15 minutes free → unlimited, through Apple / Google in-app purchase, priced cost-plus

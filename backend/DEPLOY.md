@@ -41,6 +41,33 @@ smallest instance is about **$5/month**.
    export, and redeploy — or hand the URL to Claude Code and it will do
    this step.
 
+## Waking the voice calls (Phase 3 · Slice 2)
+
+The Prayer Circle's voice calls travel over **LiveKit Cloud**, which has
+a free tier that comfortably covers a small community. Until these three
+variables are set, the app simply says calls are not yet awake — nothing
+else is affected.
+
+1. Create a free account at **cloud.livekit.io** and make a project
+   (call it anything — "Holy Bible" is fine).
+2. In the LiveKit project: **Settings → Keys → Create key**. It shows a
+   websocket URL (`wss://…livekit.cloud`), an API key, and an API
+   secret.
+3. In DigitalOcean, on the backend service, add three environment
+   variables and redeploy:
+   | Key | Value | Notes |
+   |---|---|---|
+   | `LIVEKIT_URL` | `wss://…livekit.cloud` | the project's URL |
+   | `LIVEKIT_API_KEY` | `API…` | |
+   | `LIVEKIT_API_SECRET` | `…` | tick **Encrypt** |
+4. **Check it:** `<your-url>/api/health` should now say
+   `"voice_configured": true` — and calls ring from the app at once,
+   with no new deploy of the app itself.
+
+The API secret never leaves the server: the app asks this service for a
+short-lived room token (proving who it is with its Supabase sign-in),
+and that token opens exactly one room for a couple of hours.
+
 ## Notes
 
 - CORS is locked to `https://enricht16.github.io` and local dev by

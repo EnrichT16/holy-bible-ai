@@ -19,6 +19,7 @@ import { Screen, Card, Label } from '@/components/ui';
 import { useAccount } from '@/state/AccountContext';
 import { shareText } from '@/lib/share';
 import { announce } from '@/lib/a11y';
+import { reachableNow, startCall } from '@/lib/calls';
 import {
   CircleFriend,
   Intention,
@@ -69,6 +70,39 @@ export default function Circle() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [problem, setProblem] = useState<string | null>(null);
+
+  // Gathering a group call: pick up to three, then ring them together.
+  const [gathering, setGathering] = useState(false);
+  const [chosen, setChosen] = useState<string[]>([]);
+  const [placing, setPlacing] = useState(false);
+  const [callProblem, setCallProblem] = useState<string | null>(null);
+
+  const placeCall = async (friendIds: string[]) => {
+    if (placing || friendIds.length === 0) return;
+    setPlacing(true);
+    setCallProblem(null);
+    try {
+      const callId = await startCall(friendIds);
+      setGathering(false);
+      setChosen([]);
+      router.push(`/call/${callId}` as any);
+    } catch (e) {
+      const said =
+        e instanceof Error && e.message
+          ? e.message
+          : 'The call could not be placed just now.';
+      setCallProblem(said);
+      announce(said);
+    } finally {
+      setPlacing(false);
+    }
+  };
+
+  const toggleChosen = (friendId: string) => {
+    setChosen((prev) =>
+      prev.includes(friendId) ? prev.filter((id) => id !== friendId) : [...prev, friendId],
+    );
+  };
 
   const load = useCallback(async () => {
     if (!myId) return;
@@ -239,19 +273,85 @@ export default function Circle() {
               </View>
             </Card>
           ) : (
-            <Card>
-              {circle.map((friend, i) => (
-                <FriendRow
-                  key={friend.id}
-                  friend={friend}
-                  first={i === 0}
-                  onLeave={async () => {
-                    await leaveCircle(friend.id);
-                    await load();
-                  }}
-                />
-              ))}
-            </Card>
+            <>
+              <Card>
+                {circle.map((friend, i) => (
+                  <FriendRow
+                    key={friend.id}
+                    friend={friend}
+                    first={i === 0}
+                    gathering={gathering}
+                    chosen={chosen.includes(friend.id)}
+                    onToggleChosen={() => toggleChosen(friend.id)}
+                    onCall={() => void placeCall([friend.id])}
+                    onLeave={async () => {
+                      await leaveCircle(friend.id);
+                      await load();
+                    }}
+                  />
+                ))}
+              </Card>
+              {callProblem && <Text style={styles.problem}>{callProblem}</Text>}
+              {gathering ? (
+                <>
+                  <Pressable
+                    style={[
+                      styles.primary,
+                      (chosen.length === 0 || chosen.length > 3 || placing) && { opacity: 0.45 },
+                    ]}
+                    disabled={chosen.length === 0 || chosen.length > 3 || placing}
+                    onPress={() => void placeCall(chosen)}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      chosen.length === 0
+                        ? 'Begin the prayer call. Choose friends first.'
+                        : `Begin the prayer call with ${chosen.length} ${chosen.length === 1 ? 'friend' : 'friends'}`
+                    }
+                    accessibilityState={{ disabled: chosen.length === 0 || chosen.length > 3 || placing }}
+                  >
+                    {placing ? (
+                      <ActivityIndicator color="#0d1830" />
+                    ) : (
+                      <>
+                        <Ionicons name="call-outline" size={17} color="#0d1830" aria-hidden />
+                        <Text style={styles.primaryText}>
+                          {chosen.length === 0
+                            ? 'Choose who to gather'
+                            : `Begin with ${chosen.length} ${chosen.length === 1 ? 'friend' : 'friends'}`}
+                        </Text>
+                      </>
+                    )}
+                  </Pressable>
+                  {chosen.length > 3 && (
+                    <Text style={styles.problem}>A prayer call gathers four voices at most — choose up to three friends.</Text>
+                  )}
+                  <Pressable
+                    style={styles.secondary}
+                    onPress={() => {
+                      setGathering(false);
+                      setChosen([]);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Stop gathering a group call"
+                  >
+                    <Text style={styles.secondaryText}>Never mind</Text>
+                  </Pressable>
+                </>
+              ) : (
+                circle.length >= 2 && (
+                  <Pressable
+                    style={styles.secondary}
+                    onPress={() => setGathering(true)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Gather several friends into one prayer call"
+                    accessibilityHint="Lets you choose up to three friends, then rings them together"
+                  >
+                    <Ionicons name="people-outline" size={16} color={Lumen.colors.muted} aria-hidden />
+                    <Text style={styles.secondaryText}>Pray together as a group</Text>
+                  </Pressable>
+                )
+              )}
+            </>
           )}
 
           <AddFriend onDone={load} />
@@ -340,10 +440,10 @@ function ComingNext() {
   return (
     <Card style={{ marginTop: 26 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Ionicons name="call-outline" size={20} color={Lumen.colors.muted} />
+        <Ionicons name="notifications-outline" size={20} color={Lumen.colors.muted} />
         <Text style={styles.comingText}>
-          Praying aloud together — the calls, the ringing, reading the Word as one — joins
-          your circle next.
+          Calls ring while the app is open. A true ring on a locked phone — calls that
+          find you even when the app is closed — arrives with the store apps of Phase 4.
         </Text>
       </View>
     </Card>
@@ -355,23 +455,70 @@ function ComingNext() {
 function FriendRow({
   friend,
   first,
+  gathering,
+  chosen,
+  onToggleChosen,
+  onCall,
   onLeave,
 }: {
   friend: CircleFriend;
   first: boolean;
+  gathering: boolean;
+  chosen: boolean;
+  onToggleChosen: () => void;
+  onCall: () => void;
   onLeave: () => Promise<void>;
 }) {
   const [confirming, setConfirming] = useState(false);
+  const reachable = reachableNow(friend.lastSeenAt);
+
+  // While gathering a group call, the whole row is the choice.
+  if (gathering) {
+    return (
+      <Pressable
+        style={[styles.row, !first && styles.divider]}
+        onPress={onToggleChosen}
+        accessibilityRole="checkbox"
+        accessibilityLabel={`${friend.displayName}${reachable ? '. Reachable now' : ''}`}
+        accessibilityState={{ checked: chosen }}
+      >
+        <View style={[styles.avatar, chosen && styles.avatarChosen]} aria-hidden>
+          {chosen ? (
+            <Ionicons name="checkmark" size={18} color="#0d1830" />
+          ) : (
+            <Text style={styles.avatarLetter}>{friend.displayName.trim().charAt(0).toUpperCase()}</Text>
+          )}
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.rowName}>{friend.displayName}</Text>
+          <Text style={styles.rowMeta}>{reachable ? 'Reachable now' : friend.prayerId}</Text>
+        </View>
+      </Pressable>
+    );
+  }
 
   return (
     <View style={[styles.row, !first && styles.divider]}>
       <View style={styles.avatar} aria-hidden>
         <Text style={styles.avatarLetter}>{friend.displayName.trim().charAt(0).toUpperCase()}</Text>
+        {reachable && <View style={styles.presenceDot} />}
       </View>
       <View style={{ flex: 1 }}>
         <Text style={styles.rowName}>{friend.displayName}</Text>
-        <Text style={styles.rowMeta}>{friend.prayerId}</Text>
+        <Text style={styles.rowMeta}>{reachable ? 'Reachable now' : friend.prayerId}</Text>
       </View>
+      {!confirming && (
+        <Pressable
+          hitSlop={12}
+          style={styles.iconButton}
+          onPress={onCall}
+          accessibilityRole="button"
+          accessibilityLabel={`Call ${friend.displayName} to pray together${reachable ? '. They are reachable now' : ''}`}
+          accessibilityHint="Rings them inside the app"
+        >
+          <Ionicons name="call-outline" size={20} color={Lumen.colors.accent} aria-hidden />
+        </Pressable>
+      )}
       {confirming ? (
         <>
           <Pressable
@@ -730,7 +877,9 @@ const styles = StyleSheet.create({
   rowMeta: { fontFamily: Lumen.fonts.body, fontSize: 11, letterSpacing: 1, color: Lumen.colors.muted, marginTop: 1 },
   rowNote: { fontFamily: Lumen.fonts.body, fontStyle: 'italic', fontSize: 13, color: Lumen.colors.accent2, marginTop: 4 },
   avatar: { width: 38, height: 38, borderRadius: 19, borderWidth: 1, borderColor: Lumen.colors.cardBorder, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center' },
+  avatarChosen: { backgroundColor: Lumen.colors.accent, borderColor: Lumen.colors.accent },
   avatarLetter: { fontFamily: Lumen.fonts.label, fontSize: 15, color: Lumen.colors.accent },
+  presenceDot: { position: 'absolute', right: -2, bottom: -2, width: 12, height: 12, borderRadius: 6, backgroundColor: '#7fc98a', borderWidth: 2, borderColor: '#0d1830' },
   iconButton: { paddingHorizontal: 6, paddingVertical: 4 },
   removeText: { fontFamily: Lumen.fonts.bodyBold, fontSize: 13, color: '#d99' },
   emptyWrap: { alignItems: 'center', gap: 8, paddingVertical: 10 },

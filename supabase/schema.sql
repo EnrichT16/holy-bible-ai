@@ -488,3 +488,209 @@ begin
      or (v.from_user = friend and v.to_user = me);
 end;
 $$;
+
+-- ════════════════════════════════════════════════════════════════════
+--  PHASE 3 · SLICE 2 — praying aloud together (voice calls)
+-- ════════════════════════════════════════════════════════════════════
+--
+-- The sound itself travels over a media service (LiveKit); what lives
+-- here is everything around the sound: who is reachable, who is calling
+-- whom, ringing, answering, declining, and the record of a call that
+-- was missed. A call may only ever be placed to someone in the caller's
+-- own circle, and every row is invisible to anyone outside the call.
+
+-- ── Presence ────────────────────────────────────────────────────────
+-- The app touches this timestamp quietly while it is open, so a friend
+-- can be shown as "reachable now" before anyone rings in vain. It is a
+-- column on the profile, so the existing profile policy already keeps
+-- it to yourself, your circle, and no one else.
+
+alter table public.profiles add column if not exists last_seen_at timestamptz;
+
+create or replace function public.touch_presence()
+returns void
+language sql
+security definer
+set search_path = public
+as $$
+  update public.profiles set last_seen_at = now() where id = auth.uid();
+$$;
+
+-- ── Calls and their invitations ─────────────────────────────────────
+-- A call is a room; its unguessable id doubles as the room name on the
+-- media service. Each person asked to join gets one invite row, and the
+-- row's status is the whole story: ringing, accepted, declined, or
+-- missed. All writes go through the functions below.
+
+create table if not exists public.calls (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  created_by uuid not null references public.profiles (id) on delete cascade,
+  ended_at timestamptz
+);
+
+create table if not exists public.call_invites (
+  id uuid primary key default gen_random_uuid(),
+  call_id uuid not null references public.calls (id) on delete cascade,
+  from_user uuid not null references public.profiles (id) on delete cascade,
+  to_user uuid not null references public.profiles (id) on delete cascade,
+  status text not null default 'ringing' check (status in ('ringing', 'accepted', 'declined', 'missed')),
+  created_at timestamptz not null default now(),
+  answered_at timestamptz,
+  constraint call_invites_unique unique (call_id, to_user),
+  constraint call_invites_not_self check (from_user <> to_user)
+);
+
+create index if not exists call_invites_to_user_idx
+  on public.call_invites (to_user, status, created_at desc);
+create index if not exists call_invites_call_idx
+  on public.call_invites (call_id);
+
+alter table public.calls enable row level security;
+alter table public.call_invites enable row level security;
+
+-- A call is visible only to the one who placed it and the ones asked.
+drop policy if exists "calls are visible to their participants" on public.calls;
+create policy "calls are visible to their participants"
+  on public.calls for select
+  to authenticated
+  using (
+    created_by = auth.uid()
+    or exists (
+      select 1 from public.call_invites v
+      where v.call_id = calls.id and v.to_user = auth.uid()
+    )
+  );
+
+drop policy if exists "call invites are visible to both sides" on public.call_invites;
+create policy "call invites are visible to both sides"
+  on public.call_invites for select
+  to authenticated
+  using (from_user = auth.uid() or to_user = auth.uid());
+
+-- No insert/update/delete policies: ringing, answering and ending all
+-- go through the security definer functions below.
+
+-- ── Placing a call ──────────────────────────────────────────────────
+-- Up to three friends may be gathered (four voices in all), and every
+-- one of them must already be in the caller's circle — the circle is
+-- the only phone book there is.
+create or replace function public.start_call(invitees uuid[])
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  me uuid := auth.uid();
+  new_call uuid;
+  invitee uuid;
+begin
+  if me is null then
+    raise exception 'not signed in';
+  end if;
+  if invitees is null or array_length(invitees, 1) is null then
+    raise exception 'no one to call';
+  end if;
+  if array_length(invitees, 1) > 3 then
+    raise exception 'a prayer call gathers four at most';
+  end if;
+
+  foreach invitee in array invitees loop
+    if not exists (
+      select 1 from public.circle_members m
+      where m.user_id = me and m.friend_id = invitee
+    ) then
+      raise exception 'only your circle can be called';
+    end if;
+  end loop;
+
+  insert into public.calls (created_by) values (me) returning id into new_call;
+
+  foreach invitee in array invitees loop
+    insert into public.call_invites (call_id, from_user, to_user)
+    values (new_call, me, invitee)
+    on conflict do nothing;
+  end loop;
+
+  return new_call;
+end;
+$$;
+
+-- ── Answering ───────────────────────────────────────────────────────
+-- Accepting or declining an invite addressed to you. A ring that was
+-- left too long, or whose call has already ended, is marked missed.
+create or replace function public.answer_call(call uuid, accept boolean)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  me uuid := auth.uid();
+  inv public.call_invites;
+  the_call public.calls;
+begin
+  if me is null then
+    raise exception 'not signed in';
+  end if;
+
+  select * into inv from public.call_invites v
+  where v.call_id = call and v.to_user = me and v.status = 'ringing';
+  if not found then
+    return 'not_found';
+  end if;
+
+  select * into the_call from public.calls c where c.id = call;
+  if the_call.ended_at is not null then
+    update public.call_invites set status = 'missed', answered_at = now() where id = inv.id;
+    return 'ended';
+  end if;
+
+  update public.call_invites
+  set status = case when accept then 'accepted' else 'declined' end,
+      answered_at = now()
+  where id = inv.id;
+
+  return case when accept then 'accepted' else 'declined' end;
+end;
+$$;
+
+-- ── Ending ──────────────────────────────────────────────────────────
+-- Any participant may end the call — a prayer circle is a small and
+-- trusted room. Rings still unanswered become missed calls, so a friend
+-- who arrives late finds the truth, not a phantom ringing.
+create or replace function public.end_call(call uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then
+    raise exception 'not signed in';
+  end if;
+
+  if not exists (
+    select 1 from public.calls c
+    where c.id = call
+      and (
+        c.created_by = me
+        or exists (
+          select 1 from public.call_invites v
+          where v.call_id = call and v.to_user = me
+        )
+      )
+  ) then
+    raise exception 'not your call';
+  end if;
+
+  update public.calls set ended_at = now() where id = call and ended_at is null;
+
+  update public.call_invites
+  set status = 'missed', answered_at = now()
+  where call_id = call and status = 'ringing';
+end;
+$$;
