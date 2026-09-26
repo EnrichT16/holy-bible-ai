@@ -12,7 +12,15 @@ import {
   fetchCallState,
   getVoiceTicket,
 } from '@/lib/calls';
-import { joinVoice, VoicePeer, VoiceSession, VOICE_SUPPORTED } from '@/lib/voice';
+import {
+  isReadingMessage,
+  joinVoice,
+  ReadingMessage,
+  VoicePeer,
+  VoiceSession,
+  VOICE_SUPPORTED,
+} from '@/lib/voice';
+import { SharedPassage, SharedReading } from '@/components/SharedReading';
 
 /**
  * The prayer call — a still room with voices in it.
@@ -45,6 +53,27 @@ export default function CallScreen() {
   const prevPeers = useRef<Map<string, string>>(new Map());
   const leaving = useRef(false);
 
+  // The page the whole call is reading, if anyone has opened the Word.
+  const [reading, setReading] = useState<SharedPassage | null>(null);
+  const readingRef = useRef<SharedPassage | null>(null);
+  // True while this device made the newest choice — it then repeats the
+  // choice for anyone who joins late.
+  const iTurnedThePage = useRef(false);
+
+  const chooseReading = (book: string, chapter: number) => {
+    const next: SharedPassage = {
+      book,
+      chapter,
+      at: Date.now(),
+      byName: profile?.display_name?.trim() || 'A friend in Christ',
+    };
+    readingRef.current = next;
+    iTurnedThePage.current = true;
+    setReading(next);
+    const message: ReadingMessage = { t: 'passage', ...next };
+    voice.current?.sendData(message).catch(() => {});
+  };
+
   const leave = useCallback(
     async (endForEveryone: boolean) => {
       if (leaving.current) return;
@@ -76,20 +105,44 @@ export default function CallScreen() {
       const session_ = await joinVoice(ticket.url, ticket.token, {
         onPeers: (next) => {
           const seen = new Map(next.map((p) => [p.identity, p.name]));
+          let someoneArrived = false;
           for (const [identity, name] of seen) {
-            if (!prevPeers.current.has(identity)) announce(`${name} is here.`);
+            if (!prevPeers.current.has(identity)) {
+              announce(`${name} is here.`);
+              someoneArrived = true;
+            }
           }
           for (const [identity, name] of prevPeers.current) {
             if (!seen.has(identity)) announce(`${name} has left the call.`);
           }
           prevPeers.current = seen;
           setPeers(next);
+          // Late arrivals find the call already on a page: whoever made
+          // the newest choice repeats it for them a moment later.
+          if (someoneArrived && iTurnedThePage.current && readingRef.current) {
+            const repeat: ReadingMessage = { t: 'passage', ...readingRef.current };
+            setTimeout(() => voice.current?.sendData(repeat).catch(() => {}), 1200);
+          }
         },
         onDisconnected: () => {
           if (!leaving.current) {
             setPhase('ended');
             announce('The call has ended.');
           }
+        },
+        onData: (payload) => {
+          if (!isReadingMessage(payload)) return;
+          if (payload.at <= (readingRef.current?.at ?? 0)) return;
+          const next: SharedPassage = {
+            book: payload.book,
+            chapter: payload.chapter,
+            at: payload.at,
+            byName: payload.byName?.trim() || 'A friend in Christ',
+          };
+          readingRef.current = next;
+          iTurnedThePage.current = false;
+          setReading(next);
+          announce(`${next.byName} turned to ${next.book} chapter ${next.chapter}.`);
         },
       });
       voice.current = session_;
@@ -292,6 +345,10 @@ export default function CallScreen() {
                   />
                 ))}
             </Card>
+
+            {phase === 'in-call' && (
+              <SharedReading passage={reading} onChoose={chooseReading} />
+            )}
 
             {phase === 'in-call' ? (
               <View style={styles.controls}>

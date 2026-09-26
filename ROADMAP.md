@@ -71,8 +71,11 @@ Built in slices, because calling needs someone to call before it needs a microph
   Row Level Security; the app rings with a full-screen, screen-reader-spoken invitation
   while it is open
 - [x] **Presence** — friends show as *Reachable now* while their app is open
+- [x] ***Read the Word together*** — one shared page for the whole call, carried over
+  the call itself; whoever turns the page turns it for everyone, and each person
+  reads it in their own chosen version
 - [ ] **The true ring on a locked phone** — needs the store apps → Phase 4
-- [ ] QR invites (prayer IDs already share by text); *read the Word together* in-call
+- [ ] QR invites (prayer IDs already share by text)
 
 ### Slice 3 — the subscription
 - 15 minutes free → unlimited, through Apple / Google in-app purchase, priced cost-plus

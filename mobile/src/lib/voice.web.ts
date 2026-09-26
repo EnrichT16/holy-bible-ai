@@ -9,7 +9,8 @@
 import { Room, RoomEvent, Track } from 'livekit-client';
 import type { VoiceEvents, VoicePeer, VoiceSession } from './voice';
 
-export type { VoiceEvents, VoicePeer, VoiceSession } from './voice';
+export type { VoiceEvents, VoicePeer, VoiceSession, ReadingMessage } from './voice';
+export { isReadingMessage } from './voice';
 
 export const VOICE_SUPPORTED = true;
 
@@ -48,6 +49,15 @@ export async function joinVoice(
     .on(RoomEvent.ParticipantConnected, report)
     .on(RoomEvent.ParticipantDisconnected, report)
     .on(RoomEvent.ActiveSpeakersChanged, report)
+    .on(RoomEvent.DataReceived, (payload, participant) => {
+      if (!events.onData) return;
+      try {
+        const parsed = JSON.parse(new TextDecoder().decode(payload)) as unknown;
+        events.onData(parsed, participant?.identity ?? '');
+      } catch {
+        // not ours to read
+      }
+    })
     .on(RoomEvent.Disconnected, () => {
       attached.forEach((el) => el.remove());
       attached.length = 0;
@@ -73,6 +83,10 @@ export async function joinVoice(
     },
     leave: async () => {
       await room.disconnect();
+    },
+    sendData: async (payload: unknown) => {
+      const bytes = new TextEncoder().encode(JSON.stringify(payload));
+      await room.localParticipant.publishData(bytes, { reliable: true });
     },
   };
 }
