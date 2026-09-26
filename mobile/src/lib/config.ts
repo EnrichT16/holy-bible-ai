@@ -13,4 +13,7 @@ export const CONFIG = {
   /** Where the Give tab sends people. Swap for your hosted donation page. */
   donationUrl: extra.donationUrl || 'https://example.org/give',
   giftAidUrl: extra.giftAidUrl || '',
+
+  /** The app's public address — QR invitations point here. */
+  appUrl: extra.appUrl || 'https://enricht16.github.io/holy-bible-ai',
 };

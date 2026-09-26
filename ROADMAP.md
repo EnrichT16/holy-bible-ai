@@ -74,8 +74,10 @@ Built in slices, because calling needs someone to call before it needs a microph
 - [x] ***Read the Word together*** — one shared page for the whole call, carried over
   the call itself; whoever turns the page turns it for everyone, and each person
   reads it in their own chosen version
+- [x] **QR invites** — *Show my code to scan* fills the screen with a code carrying
+  the prayer ID as a link; a friend's phone camera reads it and lands them in the
+  circle with the ID already filled in
 - [ ] **The true ring on a locked phone** — needs the store apps → Phase 4
-- [ ] QR invites (prayer IDs already share by text)
 
 ### Slice 3 — the subscription
 - 15 minutes free → unlimited, through Apple / Google in-app purchase, priced cost-plus

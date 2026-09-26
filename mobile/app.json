@@ -31,6 +31,7 @@
     "plugins": ["expo-router", "expo-font"],
     "extra": {
       "backendUrl":"https://lionfish-app-rjo2f.ondigitalocean.app",
+      "appUrl": "https://enricht16.github.io/holy-bible-ai",
       "donationUrl": "https://example.org/give",
       "giftAidUrl": "",
       "supabaseUrl": "https://wrhwaghauinxtytyyrgm.supabase.co",

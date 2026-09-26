@@ -10,16 +10,19 @@ import {
   RefreshControl,
   RefreshControlProps,
   KeyboardAvoidingView,
+  Modal,
   Platform,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Lumen } from '@/theme/lumen';
 import { Screen, Card, Label } from '@/components/ui';
 import { useAccount } from '@/state/AccountContext';
 import { shareText } from '@/lib/share';
-import { announce } from '@/lib/a11y';
+import { announce, useReducedMotion } from '@/lib/a11y';
 import { reachableNow, startCall } from '@/lib/calls';
+import { PrayerQR } from '@/components/PrayerQR';
+import { CONFIG } from '@/lib/config';
 import {
   CircleFriend,
   Intention,
@@ -63,6 +66,21 @@ export default function Circle() {
   const router = useRouter();
   const { status, profile, session, available } = useAccount();
   const myId = session?.userId ?? '';
+
+  // A friend's QR code lands here with their prayer ID in the address.
+  const { invite } = useLocalSearchParams<{ invite?: string }>();
+  const invitedCode = typeof invite === 'string' ? invite.trim().toUpperCase() : '';
+
+  const [showQR, setShowQR] = useState(false);
+  const reducedMotion = useReducedMotion();
+  useEffect(() => {
+    if (showQR && profile) {
+      announce(
+        `Your code is on screen, carrying your prayer ID ${profile.prayer_id}. ` +
+          'Let a friend point their phone camera at it.',
+      );
+    }
+  }, [showQR, profile]);
 
   const [circle, setCircle] = useState<CircleFriend[]>([]);
   const [invites, setInvites] = useState<PendingInvites>({ received: [], sent: [] });
@@ -146,6 +164,14 @@ export default function Circle() {
           “Where two or three are gathered together in my name, there am I in the midst of
           them.” — Matthew 18:20
         </Text>
+        {!!invitedCode && (
+          <Card style={{ marginTop: 16 }}>
+            <Text style={styles.note}>
+              A friend has invited you — their prayer ID, {invitedCode}, is ready and will
+              be waiting here once you sign in.
+            </Text>
+          </Card>
+        )}
         <Card style={{ marginTop: 20 }}>
           <Text style={styles.quietTitle}>Gather your few</Text>
           <Text style={styles.quiet}>
@@ -354,7 +380,18 @@ export default function Circle() {
             </>
           )}
 
-          <AddFriend onDone={load} />
+          <AddFriend onDone={load} initialCode={invitedCode} />
+
+          <Pressable
+            style={styles.secondary}
+            onPress={() => setShowQR(true)}
+            accessibilityRole="button"
+            accessibilityLabel="Show your code for a friend to scan"
+            accessibilityHint="Fills the screen with a code their phone camera can read"
+          >
+            <Ionicons name="qr-code-outline" size={16} color={Lumen.colors.muted} aria-hidden />
+            <Text style={styles.secondaryText}>Show my code to scan</Text>
+          </Pressable>
 
           {invites.sent.length > 0 && (
             <>
@@ -396,6 +433,44 @@ export default function Circle() {
       )}
 
       <ComingNext />
+
+      <Modal
+        visible={showQR}
+        transparent
+        animationType={reducedMotion ? 'none' : 'fade'}
+        onRequestClose={() => setShowQR(false)}
+        accessibilityViewIsModal
+        {...(Platform.OS === 'web' ? { 'aria-modal': true } : {})}
+      >
+        <View style={styles.qrBackdrop}>
+          <View style={styles.qrCard}>
+            <Text style={styles.qrTitle} accessibilityRole="header" aria-level={1}>
+              Let them scan this
+            </Text>
+            <Text style={styles.qrSub}>
+              A friend points their phone camera here; the link that appears brings them
+              straight to you.
+            </Text>
+            <View style={{ marginVertical: 18 }}>
+              <PrayerQR
+                value={`${CONFIG.appUrl}/circle?invite=${encodeURIComponent(profile?.prayer_id ?? '')}`}
+                label={`QR code carrying your prayer ID, ${profile?.prayer_id ?? ''}. Let a friend point their phone camera at it.`}
+              />
+            </View>
+            <Text style={styles.qrId} accessibilityLabel={`Your prayer ID, ${profile?.prayer_id ?? ''}`}>
+              {profile?.prayer_id ?? ''}
+            </Text>
+            <Pressable
+              style={styles.qrClose}
+              onPress={() => setShowQR(false)}
+              accessibilityRole="button"
+              accessibilityLabel="Close your code"
+            >
+              <Text style={styles.qrCloseText}>Done</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </Frame>
   );
 }
@@ -558,13 +633,19 @@ function FriendRow({
 
 type Lookup = { state: 'idle' } | { state: 'looking' } | { state: 'found'; name: string } | { state: 'unknown' };
 
-function AddFriend({ onDone }: { onDone: () => Promise<void> }) {
+function AddFriend({ onDone, initialCode }: { onDone: () => Promise<void>; initialCode?: string }) {
   const [code, setCode] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   const [lookup, setLookup] = useState<Lookup>({ state: 'idle' });
+
+  // A scanned QR invitation arrives as ?invite= in the address; the code
+  // steps straight into the field, and the lookup below says whose it is.
+  useEffect(() => {
+    if (initialCode && PRAYER_ID_PATTERN.test(initialCode)) setCode(initialCode);
+  }, [initialCode]);
 
   useEffect(() => {
     if (said) announce(said);
@@ -908,4 +989,11 @@ const styles = StyleSheet.create({
   prayText: { fontFamily: Lumen.fonts.bodyBold, fontSize: 13, color: Lumen.colors.muted },
   prayCount: { fontFamily: Lumen.fonts.body, fontSize: 12, color: Lumen.colors.muted, flex: 1 },
   comingText: { flex: 1, fontFamily: Lumen.fonts.body, fontStyle: 'italic', fontSize: 13, lineHeight: 20, color: Lumen.colors.muted },
+  qrBackdrop: { flex: 1, backgroundColor: 'rgba(6,12,26,0.9)', alignItems: 'center', justifyContent: 'center', padding: 24 },
+  qrCard: { width: '100%', maxWidth: 360, alignItems: 'center', backgroundColor: '#111f3d', borderRadius: Lumen.radius.lg, borderWidth: 1, borderColor: Lumen.colors.cardBorder, paddingVertical: 26, paddingHorizontal: 22 },
+  qrTitle: { fontFamily: Lumen.fonts.displaySemi, fontSize: 24, color: Lumen.colors.text, textAlign: 'center' },
+  qrSub: { fontFamily: Lumen.fonts.body, fontSize: 13, lineHeight: 20, color: Lumen.colors.muted, textAlign: 'center', marginTop: 6 },
+  qrId: { fontFamily: Lumen.fonts.label, fontSize: 16, letterSpacing: 2, color: Lumen.colors.accent2 },
+  qrClose: { alignSelf: 'stretch', alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 24, backgroundColor: Lumen.colors.accent, marginTop: 18 },
+  qrCloseText: { fontFamily: Lumen.fonts.bodyBold, color: '#0d1830', fontSize: 15 },
 });
