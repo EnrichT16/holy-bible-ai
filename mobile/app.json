@@ -2,24 +2,35 @@
   "expo": {
     "name": "Holy Bible · AI Assisted",
     "slug": "holy-bible-ai-assisted",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "holybible",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "splash": {
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#0d1830"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "org.holybible.aiassisted"
+      "bundleIdentifier": "org.holybible.aiassisted",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "The microphone carries your voice in prayer calls with your Prayer Circle. It is used only during a call you join, and nothing is recorded.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "package": "org.holybible.aiassisted",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0d1830"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",

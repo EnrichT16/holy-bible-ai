@@ -694,3 +694,24 @@ begin
   where call_id = call and status = 'ringing';
 end;
 $$;
+
+-- ── Leaving, wholly ─────────────────────────────────────────────────
+-- A person may delete their own account entirely. Removing the auth
+-- row cascades through everything that referenced it: profile, prayer
+-- ID, circle ties, invites, intentions, prayers, calls. The stores
+-- rightly require this, and so does simple respect.
+create or replace function public.delete_account()
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  me uuid := auth.uid();
+begin
+  if me is null then
+    raise exception 'not signed in';
+  end if;
+  delete from auth.users where id = me;
+end;
+$$;

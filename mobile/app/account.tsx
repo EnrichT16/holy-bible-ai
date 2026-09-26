@@ -18,6 +18,7 @@ import { useAccount } from '@/state/AccountContext';
 import { sendRecoveryEmail } from '@/lib/auth';
 import { shareText } from '@/lib/share';
 import { announce } from '@/lib/a11y';
+import { rpc } from '@/lib/supabase';
 
 /** Read a prayer ID character by character, as a screen reader should. */
 const spellPrayerId = (id: string) => id.split('').map((ch) => (ch === '-' ? 'dash' : ch)).join(' ');
@@ -108,6 +109,24 @@ function SignedIn({
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [leaving, setLeaving] = useState<'idle' | 'confirm' | 'busy'>('idle');
+
+  const deleteAccount = async () => {
+    setLeaving('busy');
+    setProblem(null);
+    try {
+      await rpc<null>('delete_account');
+      announce('Your account is deleted. Nothing of it remains. The Word is still yours, freely.');
+      await onSignOut();
+    } catch (e) {
+      setLeaving('idle');
+      setProblem(
+        e instanceof Error && e.message
+          ? e.message
+          : 'The account could not be deleted just now. Please try again.',
+      );
+    }
+  };
 
   // Say the prayer ID once when it appears, and every note or problem.
   useEffect(() => {
@@ -250,6 +269,51 @@ function SignedIn({
         <Ionicons name="log-out-outline" size={17} color={Lumen.colors.muted} aria-hidden />
         <Text style={styles.secondaryText}>Sign out</Text>
       </Pressable>
+
+      {leaving === 'idle' ? (
+        <Pressable
+          style={styles.deleteLink}
+          onPress={() => setLeaving('confirm')}
+          accessibilityRole="button"
+          accessibilityLabel="Delete your account"
+          accessibilityHint="Shows a confirmation before anything is removed"
+        >
+          <Text style={styles.deleteLinkText}>Delete your account</Text>
+        </Pressable>
+      ) : (
+        <Card style={{ marginTop: 18 }}>
+          <Text style={styles.quiet}>
+            This erases your account wholly: your prayer ID, your circle ties, your
+            intentions, and your call records. Your friends keep nothing of you but
+            memory. It cannot be undone. The Word itself remains free — no account is
+            ever needed to read or to pray.
+          </Text>
+          <View style={styles.rowButtons}>
+            <Pressable
+              style={[styles.deleteConfirm, styles.grow]}
+              onPress={deleteAccount}
+              disabled={leaving === 'busy'}
+              accessibilityRole="button"
+              accessibilityLabel="Yes, delete my account for good"
+              accessibilityState={{ disabled: leaving === 'busy' }}
+            >
+              {leaving === 'busy' ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.deleteConfirmText}>Delete for good</Text>
+              )}
+            </Pressable>
+            <Pressable
+              style={[styles.secondary, styles.grow]}
+              onPress={() => setLeaving('idle')}
+              accessibilityRole="button"
+              accessibilityLabel="Keep your account"
+            >
+              <Text style={styles.secondaryText}>Keep it</Text>
+            </Pressable>
+          </View>
+        </Card>
+      )}
 
       <Text style={styles.creed}>
         Your account is only ever a door to your circle. The Word itself needs no key.
@@ -509,6 +573,10 @@ const styles = StyleSheet.create({
   prayerId: { fontFamily: Lumen.fonts.label, fontSize: 24, letterSpacing: 3, color: Lumen.colors.bright, textAlign: 'center', marginBottom: 12 },
   quietTitle: { fontFamily: Lumen.fonts.display, fontSize: 19, color: Lumen.colors.text, marginBottom: 6 },
   quiet: { fontFamily: Lumen.fonts.body, fontSize: 13, lineHeight: 20, color: Lumen.colors.muted },
+  deleteLink: { alignSelf: 'center', minHeight: 44, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 16, marginTop: 6 },
+  deleteLinkText: { fontFamily: Lumen.fonts.body, fontSize: 13, color: 'rgba(221,153,153,0.9)' },
+  deleteConfirm: { alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 24, backgroundColor: '#a33' },
+  deleteConfirmText: { fontFamily: Lumen.fonts.bodyBold, color: '#fff', fontSize: 14 },
   nameRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 },
   name: { fontFamily: Lumen.fonts.display, fontSize: 22, color: Lumen.colors.text },
   emailLine: { fontFamily: Lumen.fonts.body, fontSize: 12, color: Lumen.colors.muted, marginTop: 10 },

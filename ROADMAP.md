@@ -87,7 +87,19 @@ Built in slices, because calling needs someone to call before it needs a microph
 
 ---
 
-## Phase 4 — The business foundation  *(before you collect money or publish)*
+## Phase 4 — The business foundation + the store apps  ← **IN PROGRESS**
+
+The technical groundwork the stores demand is done:
+- [x] **App icon and splash** — the Lumen seal: a gold cross in a double ring on lapis
+  (`mobile/assets/`), wired for iOS, Android adaptive, and the splash screen
+- [x] **Native build config** — bundle ids, microphone permission strings, `eas.json`
+  build profiles, version 1.0.0
+- [x] **Privacy policy** — in the app and at `/privacy` on the live site, written to be
+  read; the URL the store forms ask for
+- [x] **Whole-account deletion** — required by Apple: `delete_account()` in the schema
+  and a confirmed two-step door on the account page
+
+What only the publisher can do (in order):
 1. **Register the entity** at Companies House (charity or company)
 2. **Open a bank account** in its name
 3. **Donation platform** — Stripe / Donorbox / PayPal / GoCardless; if a charity, enrol
@@ -95,6 +107,10 @@ Built in slices, because calling needs someone to call before it needs a microph
 4. **Developer accounts** — Apple (~$99/yr), Google (~$25 once)
 5. Keep **subscription money separate from donations** (only donations are
    Gift-Aid-eligible). Have a professional confirm VAT and charity-trading rules.
+
+Then the builds: an Expo (EAS) account, `eas build` for both stores, native LiveKit
+for calls on the phone, push notifications for the true ring, TestFlight / internal
+testing, and submission with the listing copy in the Drive Launch folder.
 
 ---
 

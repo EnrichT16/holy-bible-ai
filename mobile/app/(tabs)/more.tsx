@@ -33,13 +33,14 @@ export default function More() {
         <Label style={styles.sectionLabel}>Community</Label>
         <Item icon="business-outline" title="Churches" sub="A verified directory worldwide" onPress={() => router.push('/churches')} live />
         <Item icon="people-outline" title="Prayer Circle" sub="The friends you pray with, and their intentions" onPress={() => router.push('/circle')} live />
-        <Item icon="call-outline" title="Pray with Friends" sub="Praying aloud together — calls arrive next" />
+        <Item icon="call-outline" title="Pray with Friends" sub="Call your circle and pray aloud together" onPress={() => router.push('/circle')} live />
         <Item icon="notifications-outline" title="Reminders" sub="The hours of prayer, ringing daily" onPress={() => router.push('/reminders')} live />
         <Item icon="school-outline" title="Mentorship" sub="The Life in the Spirit Seminar" onPress={() => router.push('/mentorship')} live />
 
         <Label style={styles.sectionLabel}>App</Label>
         <Item icon="person-circle-outline" title="Your account" sub="Your prayer ID — how friends find you" onPress={() => router.push('/account')} live />
         <Item icon="settings-outline" title="Settings" sub="Version, text size, themes, reminders" onPress={() => router.push('/settings')} live />
+        <Item icon="shield-checkmark-outline" title="Privacy" sub="What the app knows, and what it never will" onPress={() => router.push('/privacy')} live />
 
         <Text style={styles.footer}>
           “Put the Word freely in people's hands.” Free forever — never a paywall on Scripture.
