@@ -2,6 +2,7 @@
   "expo": {
     "name": "Holy Bible · AI Assisted",
     "slug": "holy-bible-ai-assisted",
+    "owner": "enrichts-team",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "holybible",
@@ -46,7 +47,10 @@
       "donationUrl": "https://example.org/give",
       "giftAidUrl": "",
       "supabaseUrl": "https://wrhwaghauinxtytyyrgm.supabase.co",
-      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndyaHdhZ2hhdWlueHR5dHl5cmdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNjU4NzUsImV4cCI6MjEwMDc0MTg3NX0.gqj36CZkpORrcGnQjlYP3mkN2uZaeUz0eSRAonWXBbY"
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndyaHdhZ2hhdWlueHR5dHl5cmdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNjU4NzUsImV4cCI6MjEwMDc0MTg3NX0.gqj36CZkpORrcGnQjlYP3mkN2uZaeUz0eSRAonWXBbY",
+      "eas": {
+        "projectId": "08c4d07c-c3dd-498a-96ea-d59d826d875a"
+      }
     }
   }
 }
