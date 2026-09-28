@@ -49,6 +49,13 @@ export default function Root({ children }: PropsWithChildren) {
         />
         <meta name="theme-color" content="#0d1830" />
         <link rel="icon" type="image/svg+xml" href={`${process.env.EXPO_BASE_URL ?? ''}/favicon.svg`} />
+        {/* Planting the link on a phone's home screen: the Lumen seal as
+            the icon, and the app opens full-screen, without browser bars. */}
+        <link rel="manifest" href={`${process.env.EXPO_BASE_URL ?? ''}/manifest.webmanifest`} />
+        <link rel="apple-touch-icon" href={`${process.env.EXPO_BASE_URL ?? ''}/icons/apple-touch-icon.png`} />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Holy Bible" />
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: A11Y_CSS }} />
         <script dangerouslySetInnerHTML={{ __html: SKIP_SCRIPT }} />
