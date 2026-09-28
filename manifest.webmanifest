@@ -1,0 +1,24 @@
+{
+  "name": "Holy Bible · AI Assisted",
+  "short_name": "Holy Bible",
+  "description": "The Word freely given: read, listen, pray the Rosary, and call your circle to pray together.",
+  "start_url": "/holy-bible-ai/",
+  "scope": "/holy-bible-ai/",
+  "display": "standalone",
+  "background_color": "#0d1830",
+  "theme_color": "#0d1830",
+  "icons": [
+    {
+      "src": "/holy-bible-ai/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/holy-bible-ai/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
