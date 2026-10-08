@@ -69,6 +69,16 @@ SUPABASE_ANON_KEY = os.environ.get(
     "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndyaHdhZ2hhdWlueHR5dHl5cmdtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUxNjU4NzUsImV4cCI6MjEwMDc0MTg3NX0.gqj36CZkpORrcGnQjlYP3mkN2uZaeUz0eSRAonWXBbY",
 )
 
+# ── Giving (Stripe) ──────────────────────────────────────────────────
+# Donations run through Stripe Checkout: the app asks this server for a
+# checkout link, the server creates the session with the secret key it
+# alone holds, and the person pays on Stripe's own page. No card detail
+# ever touches this service or the app. Until STRIPE_SECRET_KEY is set,
+# the endpoint answers 503 and the Give page says so gently.
+STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY", "")
+STRIPE_CURRENCY = os.environ.get("HOLYBIBLE_STRIPE_CURRENCY", "gbp")
+APP_URL = os.environ.get("HOLYBIBLE_APP_URL", "https://enricht16.github.io/holy-bible-ai")
+
 SYSTEM_PROMPT = (
     "You are a warm, faithful study companion inside a Christian Bible app. "
     "You help readers understand Scripture with reverence, clarity, and humility. "
@@ -88,8 +98,11 @@ RATE_LIMIT_PER_HOUR = int(os.environ.get("HOLYBIBLE_RATE_LIMIT", "20"))
 # Voice tokens are cheap to mint, so their bucket is roomier — enough
 # for a family's evening of calls, still a wall against a script.
 VOICE_RATE_LIMIT_PER_HOUR = int(os.environ.get("HOLYBIBLE_VOICE_RATE_LIMIT", "60"))
+# Checkout links are cheap, but still not worth handing to a script.
+DONATE_RATE_LIMIT_PER_HOUR = int(os.environ.get("HOLYBIBLE_DONATE_RATE_LIMIT", "30"))
 _hits: dict[str, deque] = {}
 _voice_hits: dict[str, deque] = {}
+_donate_hits: dict[str, deque] = {}
 
 
 def _client_ip(request: Request) -> str:
@@ -134,6 +147,7 @@ def health():
         "model": MODEL,
         "claude_configured": bool(ANTHROPIC_API_KEY),
         "voice_configured": bool(LIVEKIT_URL and LIVEKIT_API_KEY and LIVEKIT_API_SECRET),
+        "giving_configured": bool(STRIPE_SECRET_KEY),
     }
 
 
@@ -272,6 +286,73 @@ async def call_token(req: CallTokenRequest, request: Request):
     }
     token = jwt.encode(claims, LIVEKIT_API_SECRET, algorithm="HS256")
     return CallTokenResponse(token=token, url=LIVEKIT_URL)
+
+
+# ── Giving ────────────────────────────────────────────────────────────
+
+class DonateRequest(BaseModel):
+    amount_pounds: int
+    frequency: Literal["once", "monthly"]
+    gift_aid: bool = False
+
+
+class DonateResponse(BaseModel):
+    url: str
+
+
+@app.post("/api/donate", response_model=DonateResponse)
+async def donate(req: DonateRequest, request: Request):
+    if not STRIPE_SECRET_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="Giving is not configured on the server yet.",
+        )
+    if not _within_rate_limit(_client_ip(request), _donate_hits, DONATE_RATE_LIMIT_PER_HOUR):
+        raise HTTPException(
+            status_code=429,
+            detail="A moment, please — try again shortly.",
+        )
+    if req.amount_pounds < 1 or req.amount_pounds > 5000:
+        raise HTTPException(status_code=400, detail="Choose an amount between 1 and 5000 pounds.")
+
+    pence = req.amount_pounds * 100
+    monthly = req.frequency == "monthly"
+    form: dict[str, str] = {
+        "mode": "subscription" if monthly else "payment",
+        "line_items[0][quantity]": "1",
+        "line_items[0][price_data][currency]": STRIPE_CURRENCY,
+        "line_items[0][price_data][unit_amount]": str(pence),
+        "line_items[0][price_data][product_data][name]": (
+            "Monthly gift to Holy Bible · AI Assisted" if monthly
+            else "Gift to Holy Bible · AI Assisted"
+        ),
+        "success_url": f"{APP_URL}/give?thanks=1",
+        "cancel_url": f"{APP_URL}/give",
+        "metadata[gift_aid]": "yes" if req.gift_aid else "no",
+        "metadata[app]": "holy-bible-ai",
+    }
+    if monthly:
+        form["line_items[0][price_data][recurring][interval]"] = "month"
+    else:
+        form["submit_type"] = "donate"
+
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            r = await client.post(
+                "https://api.stripe.com/v1/checkout/sessions",
+                data=form,
+                auth=(STRIPE_SECRET_KEY, ""),
+            )
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail="The giving service could not be reached just now.")
+
+    if r.status_code != 200:
+        raise HTTPException(status_code=502, detail=f"The giving service answered strangely ({r.status_code}).")
+
+    url = r.json().get("url", "")
+    if not url:
+        raise HTTPException(status_code=502, detail="The giving service returned no checkout page.")
+    return DonateResponse(url=url)
 
 
 if __name__ == "__main__":

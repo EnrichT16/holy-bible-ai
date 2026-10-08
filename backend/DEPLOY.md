@@ -68,6 +68,26 @@ The API secret never leaves the server: the app asks this service for a
 short-lived room token (proving who it is with its Supabase sign-in),
 and that token opens exactly one room for a couple of hours.
 
+## Waking the giving (Stripe donations)
+
+Donations run through Stripe Checkout: the app asks this backend for a
+checkout link and the person pays on Stripe's own page, so no card ever
+touches the app or this server. Until the key is set, the Give page
+says gently that giving is nearly ready.
+
+1. In the Stripe dashboard: **Developers → API keys** — copy the
+   **Secret key** (`sk_live_…`, or `sk_test_…` to try it first).
+2. On the DigitalOcean service, add the environment variable
+   `STRIPE_SECRET_KEY` with that value — tick **Encrypt** — and
+   redeploy.
+3. **Check it:** `<your-url>/api/health` should say
+   `"giving_configured": true`, and the Give page's button then opens
+   Stripe Checkout. One-time gifts use a donate button; monthly gifts
+   create a subscription the giver can cancel from Stripe's receipts.
+
+Optional: `HOLYBIBLE_STRIPE_CURRENCY` (default `gbp`) and
+`HOLYBIBLE_APP_URL` (where Stripe returns the giver afterwards).
+
 ## Notes
 
 - CORS is locked to `https://enricht16.github.io` and local dev by
